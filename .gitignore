@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+build/
+dist/
+
+# Excel y Datos (Ignoramos los archivos temporales de Excel y los datos pesados)
+~$*.xlsx
+data/*.xlsx
+*.csv
+
+# Entorno y variables
+.env
+.venv
+
+# IDEs (VS Code / PyCharm)
+.vscode/
+.idea/
+
+# Sistema Operativo
+Thumbs.db
+Desktop.ini
+.DS_Store
