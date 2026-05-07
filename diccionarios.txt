@@ -1,0 +1,152 @@
+gorro, visera,
+casaca, chaqueta, parka, abrigo, polera, chaleco,
+polo,
+
+
+toalla,
+almohada, 
+mandil,
+mochila, canguro, bolsa, chimpunera, morral
+
+
+cuaderno, libreta, block, hoja, agenda, cuadernillo
+cartuchera, neceser,
+lapicero, resaltador
+tarjeta,
+llavero,
+pines,
+trofeo, medalla, placa
+
+
+tomatodo,
+vaso, taza, cafetera, cuchara, batidor,
+sticker,
+caja, cubo,
+alcancia,
+pad (mouse)
+props (selfie?)
+tablet (tents)  
+
+PORTA NOMBRES  ACRÍLICO/MADERA 	(????)
+PORTA POST IT CALENDARIO 	
+
+
+# Accesorios para la cabeza
+headwear = {
+    "gorro": ["gorros", "chullos", "beanies"],
+    "visera": ["viseras", "parasoles de cabeza"]
+}
+
+# Prendas de vestir (Torso y Abrigo)
+apparel = {
+    "casaca": ["casacas", "chamarras", "cortavientos"],
+    "chaqueta": ["chaquetas", "blazers"],
+    "parka": ["parkas", "abrigos largos"],
+    "abrigo": ["abrigos", "sobretodos"],
+    "polera": ["poleras", "sudaderas", "hoodies"],
+    "chaleco": ["chalecos", "gilets"],
+    "polo": ["polos", "camisetas", "remeras"]
+}
+
+# Textiles y Hogar
+textiles = {
+    "toalla": ["toallas", "toallones"],
+    "almohada": ["almohadas", "cojines"],
+    "mandil": ["mandiles", "delantales"]
+}
+
+# Bolsos y Transporte
+bags = {
+    "mochila": ["mochilas", "morrales de espalda"],
+    "canguro": ["canguros", "riñoneras"],
+    "bolsa": ["bolsas", "totes", "bolsas ecológicas"],
+    "chimpunera": ["chimpuneras", "portacalzados"],
+    "morral": ["morrales", "bandoleras"]
+}
+
+# Papelería y Escritorio
+stationery = {
+    "cuaderno": ["cuadernos", "anillados"],
+    "libreta": ["libretas", "journals"],
+    "block": ["blocks", "blocs de notas"],
+    "hoja": ["hojas", "folios"],
+    "agenda": ["agendas", "planificadores"],
+    "cartuchera": ["cartucheras", "estuches"],
+    "neceser": ["neceseres", "bolsos de aseo"],
+    "lapicero": ["lapiceros", "bolígrafos", "plumas"],
+    "resaltador": ["resaltadores", "plumones flúor"]
+}
+
+# Merchandising Pequeño y Premiaciones
+accessories_awards = {
+    "tarjeta": ["tarjetas", "carnets"],
+    "llavero": ["llaveros", "pendientes"],
+    "pines": ["pines", "prendedores", "insignias"],
+    "trofeo": ["trofeos", "copas"],
+    "medalla": ["medallas", "preseas"],
+    "placa": ["placas", "reconocimientos"]
+}
+
+# Menaje y Oficina
+office_kitchen = {
+    "tomatodo": ["tomatodos", "botellas", "caramañolas"],
+    "vaso": ["vasos", "copas de vidrio"],
+    "taza": ["tazas", "mugs"],
+    "cafetera": ["cafeteras", "prensas francesas"],
+    "cuchara": ["cucharas", "cubiertos"],
+    "batidor": ["batidores", "mezcladores"],
+    "sticker": ["stickers", "calcomanías", "adhesivos"],
+    "caja": ["cajas", "empaques"],
+    "pad_mouse": ["mouse pads", "alfombrillas para mouse"]
+}
+
+# Eventos y Tecnología
+events_tech = {
+    "props": ["props", "accesorios para fotos", "marcos de selfie"],
+    "tablet_tents": ["tablet tents", "habladores", "carpas de mesa"]
+}
+
+
+# Listas de términos en plural y similares
+
+prendas_cabeza = ["gorros", "chullos", "beanies", "viseras", "parasoles de cabeza"]
+
+abrigo_y_torso = [
+    "casacas", "chamarras", "cortavientos", "chaquetas", "blazers", 
+    "parkas", "abrigos largos", "abrigos", "sobretodos", 
+    "poleras", "sudaderas", "hoodies", "chalecos", "gilets", 
+    "polos", "camisetas", "remeras"
+]
+
+textiles_hogar = ["toallas", "toallones", "almohadas", "cojines", "mandiles", "delantales"]
+
+bolsos_transporte = [
+    "mochilas", "morrales de espalda", "canguros", "riñoneras", 
+    "bolsas", "totes", "bolsas ecológicas", "chimpuneras", 
+    "portacalzados", "morrales", "bandoleras"
+]
+
+papeleria_escritorio = [
+    "cuadernos", "anillados", "libretas", "journals", "blocks", 
+    "blocs de notas", "hojas", "folios", "agendas", "planificadores", 
+    "cartucheras", "estuches", "neceseres", "bolsos de aseo", 
+    "lapiceros", "bolígrafos", "plumas", "resaltadores", "plumones flúor"
+]
+
+merchandising_premios = [
+    "tarjetas", "carnets", "llaveros", "pendientes", "pines", 
+    "prendedores", "insignias", "trofeos", "copas", "medallas", 
+    "preseas", "placas", "reconocimientos"
+]
+
+oficina_menaje = [
+    "tomatodos", "botellas", "caramañolas", "vasos", "copas de vidrio", 
+    "tazas", "mugs", "cafeteras", "prensas francesas", "cucharas", 
+    "cubiertos", "batidores", "mezcladores", "stickers", "calcomanías", 
+    "adhesivos", "cajas", "empaques", "mouse pads", "alfombrillas"
+]
+
+eventos_tecnologia = [
+    "props", "accesorios para fotos", "marcos de selfie", 
+    "tablet tents", "habladores", "carpas de mesa"
+]

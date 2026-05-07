@@ -1,0 +1,37 @@
+cotizador/
+├── main.py                 # Punto de entrada de la aplicación
+├── requirements.txt        # Librerías (pandas, customtkinter, openpyxl)
+├── .gitignore              # Para evitar subir el Excel o carpetas __pycache__
+├── assets/                 # Iconos, imágenes y estilos CSS/JSON para la UI
+├── data/                   # Aquí guardarás el archivo "ResumenCotizador_..."
+├── src/
+│   ├── __init__.py
+│   ├── controllers/        # Lógica de unión entre UI y Datos
+│   │   └── quote_controller.py
+│   ├── models/             # Definición de objetos
+│   │   ├── product.py
+│   │   └── supplier.py
+│   ├── services/           # Automatización y extracción (Regex)
+│   │   ├── excel_manager.py
+│   │   └── price_extractor.py
+│   └── views/              # Interfaz gráfica (CustomTkinter)
+│       ├── main_window.py
+│       └── components/     # Botones o tablas personalizadas
+└── tests/                  # Pruebas unitarias para la lógica de precios
+
+
+
+
+1ro Busca: Palabra clave en columna DETALLES 
+2do Obtener: Cant., "Costo uni. No IGV (S/.)", "COSTO S/.", luego almacenar en variables (cantidad, costo_proveedor y costo_final) respectivamente
+3ero Calcular: margen = (costo_final - costo_proveedor) / costo_proveedor
+4to Condicional: si la cantidad es mayor a 1000, entonces se almacena el margen en un acumulador llamado acumulador_1, 
+y una variable contador_1 debe sumar 1, caso contrario pasa al siguiente condicional donde si la cantidad es mayor a 500,
+entonces se almacena el margen en un acumulador llamado acumulador_2, y una variable contador_2 debe sumar 1, sino cumple con ambas condiciones,
+entonces debe almacenar el margen en un acumulador llamado acumulador_3, y una variable contador_3 debe sumar 1. Los acumuladores deben sumar
+los margenes que vayan ingresando y los contadores deben contar la cantidad de veces que ha ingresado el valor en sus respectivos condicionales.
+El programa debe recorrer la tabla fila por fila y al terminar de recorrerlo deberá calcular: 
+margen_1000 = acumulador_1 / contador_1
+margen_500 = acumulador_2 / contador_2
+margen_100 = acumulador_3 / contador_3
+5to Imprimir: margen_1000, margen_500 y margen_100
