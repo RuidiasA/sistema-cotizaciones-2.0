@@ -178,3 +178,7 @@ articulos_merchandising = [
 ]
 
 116 elementos encontrados
+
+Mantenimiento de elementwos duplicados (elementos con mismo nombre de articulo pero precios diferentes)
+
+

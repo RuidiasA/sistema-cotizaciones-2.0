@@ -114,6 +114,24 @@ def cumple_busqueda_tokenizada(fila):
             return True
     return False
 
+def recortar_detalle(valor, max_len=20):
+    """Recorta el detalle a un maximo de caracteres y agrega puntos suspensivos."""
+    if pd.isna(valor):
+        return ""
+    texto = re.sub(r"\s+", " ", str(valor)).strip()
+    if len(texto) <= max_len:
+        return texto
+    return texto[:max_len - 3].rstrip() + "..."
+
+def imprimir_tabla_encabezado():
+    ancho = 75
+    print("   " + "-" * ancho)
+    print("   " + f"{'Fila':>5} | {'Articulo':<20} | {'Cant':>5} | {'Prov':>10} | {'Cli':>10} | {'Margen%':>8}")
+    print("   " + "-" * ancho)
+
+def imprimir_fila_tabla(fila_id, articulo, cantidad, prov, cli, margen):
+    print("   " + f"{str(fila_id):>5} | {str(articulo):<20} | {str(cantidad):>5} | {str(prov):>10} | {str(cli):>10} | {str(margen):>8}")
+
 # ==========================================
 # 2. ESCANEO DE ARCHIVOS
 # ==========================================
@@ -125,7 +143,9 @@ print(f"📂 Procesando {len(archivos_a_procesar)} archivos...\n")
 # ==========================================
 for ruta in archivos_a_procesar:
     nombre_archivo = os.path.basename(ruta)
+    print("\n" + "=" * 81)
     print(f"📄 Analizando: {nombre_archivo}")
+    print("=" * 81)
     
     try:
         xls = pd.ExcelFile(ruta)
@@ -153,13 +173,14 @@ for ruta in archivos_a_procesar:
                 c_finals = [c for c in df_temp.columns if any(kw in c.lower() for kw in ["unit", "uni.", "uni ", "no igv", "venta"])]
                 c_provs = [c for c in df_temp.columns if any(kw in c.lower() for kw in ["costo s/.", "costo prov"]) 
                            and c not in c_finals and "total" not in c.lower()]
+                c_detalle = next((c for c in df_temp.columns if "detalle" in c.lower()), None)
 
                 if c_cant and (c_provs or c_finals):
                     mask = df_temp.apply(cumple_busqueda_tokenizada, axis=1)
                     if mask.sum() > max_casacas:
                         max_casacas = mask.sum()
                         mejor_hoja, mejor_df = nombre_hoja, df_temp
-                        col_map = {'cant': c_cant, 'provs': c_provs, 'finals': c_finals}
+                        col_map = {'cant': c_cant, 'provs': c_provs, 'finals': c_finals, 'detalle': c_detalle}
 
         if mejor_df is None or max_casacas <= 0:
             print(f"   ❌ No se detectó una tabla válida.")
@@ -167,6 +188,7 @@ for ruta in archivos_a_procesar:
 
         vistos = set()
         sumadas = 0
+        imprimir_tabla_encabezado()
         
         for idx, fila in mejor_df.iterrows():
             if not cumple_busqueda_tokenizada(fila): continue
@@ -180,13 +202,13 @@ for ruta in archivos_a_procesar:
                 v1 = 0.0
                 for c in col_map['provs']:
                     val = limpiar_precio(fila[c])
-                    if val >= 1.0: v1 = val; break
+                    if val >= 0.2: v1 = round(val, 2); break
                 
                 # Buscar el mejor precio cliente
                 v2 = 0.0
                 for c in col_map['finals']:
                     val = limpiar_precio(fila[c])
-                    if val > v1: v2 = val; break # El precio cliente debe ser mayor al del proveedor
+                    if val > v1: v2 = round(val, 2); break # El precio cliente debe ser mayor al del proveedor
 
                 if v1 <= 0 or v2 <= 0 or abs(v1-v2) < 0.5: continue
                 
@@ -194,10 +216,20 @@ for ruta in archivos_a_procesar:
                 if huella in vistos: continue
 
                 margen = ((v2 - v1) / v1) * 100
-                if margen > 250: continue # Filtro de seguridad
+                if margen > 450: continue # Filtro de seguridad
 
                 vistos.add(huella)
-                print(f"   -> [Fila {idx}] OK | Cant: {cantidad} | Prov: S/.{v1} | Cli: S/.{v2} | Margen: {margen:.2f}%")
+                detalle_col = col_map.get('detalle')
+                detalle_raw = fila[detalle_col] if detalle_col else ""
+                detalle = recortar_detalle(detalle_raw)
+                imprimir_fila_tabla(
+                    idx,
+                    detalle,
+                    cantidad,
+                    f"S/.{v1}",
+                    f"S/.{v2}",
+                    f"{margen:.2f}%"
+                )
                 
                 if cantidad > 1000:
                     acumulador_1 += margen; contador_1 += 1
