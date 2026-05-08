@@ -7,20 +7,69 @@ import re
 # ==========================================
 CARPETA_EXCEL = r"E:\TASA" 
 VARIACIONES = [
-    "cuaderno", "cuadernos", "anillados", "espirales",
-    "libreta", "libretas", "journals", "notepads",
+    # Categoría: Prendas de Cabeza
+    "gorro", "gorros", "gorra", "gorras", "chullo", "chullos", "beanies", "pasamontaña",
+    "pasamontañas", "visera", "viseras", "parasoles", "parasoles", "viseras deportivas",
+
+    # Categoría: Ropa y Abrigo
+    "casaca", "casacas", "chamarra", "chamarras", "camiseta", "camisetas", "cortavientos", 
+    "jackets", "chaqueta", "chaquetas", "blazer", "blazers", "saco", "sacos",
+    "parka", "parkas", "abrigos largos", "gabardina", "gabardinas",
+    "abrigo", "abrigos", "sobretodo", "sobretodos", "prendas de invierno",
+    "polera", "poleras", "sudadera", "sudaderas", "hoodie", "hoodies", "buzo",
+    "buzos", "chaleco", "chalecos", "gilets", "chalecos tácticos",
+    "polo", "polos", "remera", "remeras", "t-shirt", "t-shirts"
+
+    # Categoría: Textiles y Hogar
+    "toalla", "toallas", "toallones", "paño", "paños", "paños microfibra",
+    "almohada", "almohadas", "almohadas de viaje", "cojin", "cojines",
+    "mandil", "mandiles", "delantal", "delantales", "tabliers",
+
+    # Categoría: Bolsos y Transporte
+    "mochila", "mochilas", "morral", "morrales", "morrales de espalda", "backpack",
+    "backpacks", "canguro", "canguro", "canguros", "riñonera", "riñoneras", "koalas",
+    "bolsa", "bolsas", "bolso", "bolsos", "bolsas ecológicas", "bolsos deportivos", 
+    "bolsos cruzados", "totes", "notex", "chimpunera", "chimpuneras", "portacalzado",
+    "portacalzados", "bandolera", "bandoleras", "maletin", "maletines"
+
+    # Categoría: Papelería y Oficina
+    "cuaderno", "cuadernos", "anillado", "anillados", "espirales",
+    "libreta", "libretas", "journals", "notepad", "notepads",
     "block", "blocks", "blocs de notas", "tacos de notas",
-    "hoja", "hojas", "folios", "papeles",
-    "agenda", "agendas", "planificadores", "diarios",
-    "cuadernillo", "cuadernillos", "folletos", "pasquines",
-    "cartuchera", "cartucheras", "estuches", "portautiles",
+    "hoja", "hojas", "folio", "folios", "papel", "papeles",
+    "agenda", "agendas", "planificadores", "diario", "diarios",
+    "cuadernillo", "cuadernillos", "folleto", "folletos", "pasquines",
+    "cartuchera", "cartucheras", "estuche", "estuches", "portautiles",
     "neceser", "neceseres", "bolsos de aseo", "organizadores",
-    "lapicero", "lapiceros", "bolígrafos", "plumas", "esferos",
-    "resaltador", "resaltadores", "plumones flúor", "marcadores de texto",
+    "lapicero", "lapiceros", "bolígrafo", "bolígrafos", "pluma", "plumas", "esferos",
+    "resaltador", "resaltadores", "plumon", "plumones", "plumones flúor", "marcadores de texto",
     "tarjeta", "tarjetas", "tarjetas personales", "business cards",
     "porta nombre acrílico", "porta nombres acrílicos", "identificadores", "fotochecks",
     "porta nombre madera", "porta nombres madera", "identificadores rústicos",
-    "porta post it calendario", "porta post it calendarios", "organizadores de escritorio"
+    "porta post it calendario", "porta post it calendarios", "organizadores de escritorio",
+
+    # Categoría: Accesorios y Premiaciones
+    "llavero", "llaveros", "pendientes", "keychains",
+    "pin", "pines", "prendedores", "insignia", "insignias", "broche",
+    "broches", "trofeo", "trofeos", "copa", "copas", "galardon",
+    "galardones", "medalla", "medallas", "preseas", "condecoracion", "condecoraciones",
+    "placa", "placas", "placas grabadas", "reconocimiento", "reconocimientos", 
+
+    # Categoría: Menaje y Otros
+    "tomatodo", "tomatodos", "botella", "botellas", "vino", "vinos", 
+    "caramañolas", "shakers", "vaso", "vasos", "vasos térmicos",
+    "copas", "copas", "taza", "tazas", "mugs", "pocillos",
+    "cafetera", "cafeteras", "prensas francesas", "mokes",
+    "cuchara", "cucharas", "cubiertos", "utensilios", "batidor",
+    "batidores", "mezclador", "mezcladores", "espumadores", "sticker",
+    "stickers", "calcomanía", "calcomanías", "adhesivo", "adhesivos",
+    "caja", "cajas", "empaques", "packaging", "cubo", "cubos", "dado",
+    "dados", "bloque", "bloques", "alcancía", "alcancías", "huchas", "chanchitos",
+    "pad mouse", "mouse pad", "mousepad", "alfombrillas", "tapetes de escritorio",
+    "prop selfie", "props selfie", "accesorios para fotos", "marcos selfie",
+    "tablet tent", "tablet tents", "habladores", "carpas de mesa", "displays",
+    "kit", "power bank", "manta", "mantas", "pastillero", "pastilleros",
+    "porta frasco", "exhibidor", "pasa diapositiva"
 ]
 
 HOJAS_EXCLUIDAS = ["criterios", "tallas", "cronograma", "datos", "deuda", "producción", "proveedor", "proveedores", "costo de proyecto"]
@@ -131,7 +180,7 @@ for ruta in archivos_a_procesar:
                 v1 = 0.0
                 for c in col_map['provs']:
                     val = limpiar_precio(fila[c])
-                    if val >= 15.0: v1 = val; break
+                    if val >= 1.0: v1 = val; break
                 
                 # Buscar el mejor precio cliente
                 v2 = 0.0

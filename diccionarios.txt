@@ -107,46 +107,74 @@ events_tech = {
 }
 
 
-# Listas de términos en plural y similares
 
-prendas_cabeza = ["gorros", "chullos", "beanies", "viseras", "parasoles de cabeza"]
 
-abrigo_y_torso = [
-    "casacas", "chamarras", "cortavientos", "chaquetas", "blazers", 
-    "parkas", "abrigos largos", "abrigos", "sobretodos", 
-    "poleras", "sudaderas", "hoodies", "chalecos", "gilets", 
-    "polos", "camisetas", "remeras"
+# Lista de artículos de merchandising y textil (Singular, Plural y Similares)
+
+articulos_merchandising = [
+    # Categoría: Prendas de Cabeza
+    "gorro", "gorros", "gorra", "gorras", "chullo", "chullos", "beanies", "pasamontaña",
+    "pasamontañas", "visera", "viseras", "parasoles", "parasoles", "viseras deportivas",
+
+    # Categoría: Ropa y Abrigo
+    "casaca", "casacas", "chamarra", "chamarras", "camiseta", "camisetas", "cortavientos", 
+    "jackets", "chaqueta", "chaquetas", "blazer", "blazers", "saco", "sacos",
+    "parka", "parkas", "abrigos largos", "gabardina", "gabardinas",
+    "abrigo", "abrigos", "sobretodo", "sobretodos", "prendas de invierno",
+    "polera", "poleras", "sudadera", "sudaderas", "hoodie", "hoodies", "buzo",
+    "buzos", "chaleco", "chalecos", "gilets", "chalecos tácticos",
+    "polo", "polos", "remera", "remeras", "t-shirt", "t-shirts"
+
+    # Categoría: Textiles y Hogar
+    "toalla", "toallas", "toallones", "paño", "paños", "paños microfibra",
+    "almohada", "almohadas", "almohadas de viaje", "cojin", "cojines",
+    "mandil", "mandiles", "delantal", "delantales", "tabliers",
+
+    # Categoría: Bolsos y Transporte
+    "mochila", "mochilas", "morral", "morrales", "morrales de espalda", "backpack",
+    "backpacks", "canguro", "canguro", "canguros", "riñonera", "riñoneras", "koalas",
+    "bolsa", "bolsas", "bolso", "bolsos", "bolsas ecológicas", "bolsos deportivos", 
+    "bolsos cruzados", "totes", "notex", "chimpunera", "chimpuneras", "portacalzado",
+    "portacalzados", "bandolera", "bandoleras", "maletin", "maletines"
+
+    # Categoría: Papelería y Oficina
+    "cuaderno", "cuadernos", "anillado", "anillados", "espirales",
+    "libreta", "libretas", "journals", "notepad", "notepads",
+    "block", "blocks", "blocs de notas", "tacos de notas",
+    "hoja", "hojas", "folio", "folios", "papel", "papeles",
+    "agenda", "agendas", "planificadores", "diario", "diarios",
+    "cuadernillo", "cuadernillos", "folleto", "folletos", "pasquines",
+    "cartuchera", "cartucheras", "estuche", "estuches", "portautiles",
+    "neceser", "neceseres", "bolsos de aseo", "organizadores",
+    "lapicero", "lapiceros", "bolígrafo", "bolígrafos", "pluma", "plumas", "esferos",
+    "resaltador", "resaltadores", "plumon", "plumones", "plumones flúor", "marcadores de texto",
+    "tarjeta", "tarjetas", "tarjetas personales", "business cards",
+    "porta nombre acrílico", "porta nombres acrílicos", "identificadores", "fotochecks",
+    "porta nombre madera", "porta nombres madera", "identificadores rústicos",
+    "porta post it calendario", "porta post it calendarios", "organizadores de escritorio",
+
+    # Categoría: Accesorios y Premiaciones
+    "llavero", "llaveros", "pendientes", "keychains",
+    "pin", "pines", "prendedores", "insignia", "insignias", "broche",
+    "broches", "trofeo", "trofeos", "copa", "copas", "galardon",
+    "galardones", "medalla", "medallas", "preseas", "condecoracion", "condecoraciones",
+    "placa", "placas", "placas grabadas", "reconocimiento", "reconocimientos", 
+
+    # Categoría: Menaje y Otros
+    "tomatodo", "tomatodos", "botella", "botellas", "vino", "vinos", 
+    "caramañolas", "shakers", "vaso", "vasos", "vasos térmicos",
+    "copas", "copas", "taza", "tazas", "mugs", "pocillos",
+    "cafetera", "cafeteras", "prensas francesas", "mokes",
+    "cuchara", "cucharas", "cubiertos", "utensilios", "batidor",
+    "batidores", "mezclador", "mezcladores", "espumadores", "sticker",
+    "stickers", "calcomanía", "calcomanías", "adhesivo", "adhesivos",
+    "caja", "cajas", "empaques", "packaging", "cubo", "cubos", "dado",
+    "dados", "bloque", "bloques", "alcancía", "alcancías", "huchas", "chanchitos",
+    "pad mouse", "mouse pad", "mousepad", "alfombrillas", "tapetes de escritorio",
+    "prop selfie", "props selfie", "accesorios para fotos", "marcos selfie",
+    "tablet tent", "tablet tents", "habladores", "carpas de mesa", "displays",
+    "kit", "power bank", "manta", "mantas", "pastillero", "pastilleros",
+    "porta frasco", "exhibidor", "pasa diapositiva"
 ]
 
-textiles_hogar = ["toallas", "toallones", "almohadas", "cojines", "mandiles", "delantales"]
-
-bolsos_transporte = [
-    "mochilas", "morrales de espalda", "canguros", "riñoneras", 
-    "bolsas", "totes", "bolsas ecológicas", "chimpuneras", 
-    "portacalzados", "morrales", "bandoleras"
-]
-
-papeleria_escritorio = [
-    "cuadernos", "anillados", "libretas", "journals", "blocks", 
-    "blocs de notas", "hojas", "folios", "agendas", "planificadores", 
-    "cartucheras", "estuches", "neceseres", "bolsos de aseo", 
-    "lapiceros", "bolígrafos", "plumas", "resaltadores", "plumones flúor"
-]
-
-merchandising_premios = [
-    "tarjetas", "carnets", "llaveros", "pendientes", "pines", 
-    "prendedores", "insignias", "trofeos", "copas", "medallas", 
-    "preseas", "placas", "reconocimientos"
-]
-
-oficina_menaje = [
-    "tomatodos", "botellas", "caramañolas", "vasos", "copas de vidrio", 
-    "tazas", "mugs", "cafeteras", "prensas francesas", "cucharas", 
-    "cubiertos", "batidores", "mezcladores", "stickers", "calcomanías", 
-    "adhesivos", "cajas", "empaques", "mouse pads", "alfombrillas"
-]
-
-eventos_tecnologia = [
-    "props", "accesorios para fotos", "marcos de selfie", 
-    "tablet tents", "habladores", "carpas de mesa"
-]
+116 elementos encontrados
