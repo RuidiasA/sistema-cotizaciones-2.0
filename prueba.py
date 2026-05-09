@@ -1,76 +1,78 @@
 import pandas as pd
 import os
 import re
+import unicodedata
 
 # ==========================================
 # 1. CONFIGURACIÓN INICIAL
 # ==========================================
 CARPETA_EXCEL = r"E:\TASA" 
-VARIACIONES = [
-    # Categoría: Prendas de Cabeza
-    "gorro", "gorros", "gorra", "gorras", "chullo", "chullos", "beanies", "pasamontaña",
-    "pasamontañas", "visera", "viseras", "parasoles", "parasoles", "viseras deportivas",
-
-    # Categoría: Ropa y Abrigo
-    "casaca", "casacas", "chamarra", "chamarras", "camiseta", "camisetas", "cortavientos", 
-    "jackets", "chaqueta", "chaquetas", "blazer", "blazers", "saco", "sacos",
-    "parka", "parkas", "abrigos largos", "gabardina", "gabardinas",
-    "abrigo", "abrigos", "sobretodo", "sobretodos", "prendas de invierno",
-    "polera", "poleras", "sudadera", "sudaderas", "hoodie", "hoodies", "buzo",
-    "buzos", "chaleco", "chalecos", "gilets", "chalecos tácticos",
-    "polo", "polos", "remera", "remeras", "t-shirt", "t-shirts"
-
-    # Categoría: Textiles y Hogar
-    "toalla", "toallas", "toallones", "paño", "paños", "paños microfibra",
-    "almohada", "almohadas", "almohadas de viaje", "cojin", "cojines",
-    "mandil", "mandiles", "delantal", "delantales", "tabliers",
-
-    # Categoría: Bolsos y Transporte
-    "mochila", "mochilas", "morral", "morrales", "morrales de espalda", "backpack",
-    "backpacks", "canguro", "canguro", "canguros", "riñonera", "riñoneras", "koalas",
-    "bolsa", "bolsas", "bolso", "bolsos", "bolsas ecológicas", "bolsos deportivos", 
-    "bolsos cruzados", "totes", "notex", "chimpunera", "chimpuneras", "portacalzado",
-    "portacalzados", "bandolera", "bandoleras", "maletin", "maletines"
-
-    # Categoría: Papelería y Oficina
-    "cuaderno", "cuadernos", "anillado", "anillados", "espirales",
-    "libreta", "libretas", "journals", "notepad", "notepads",
-    "block", "blocks", "blocs de notas", "tacos de notas",
-    "hoja", "hojas", "folio", "folios", "papel", "papeles",
-    "agenda", "agendas", "planificadores", "diario", "diarios",
-    "cuadernillo", "cuadernillos", "folleto", "folletos", "pasquines",
-    "cartuchera", "cartucheras", "estuche", "estuches", "portautiles",
-    "neceser", "neceseres", "bolsos de aseo", "organizadores",
-    "lapicero", "lapiceros", "bolígrafo", "bolígrafos", "pluma", "plumas", "esferos",
-    "resaltador", "resaltadores", "plumon", "plumones", "plumones flúor", "marcadores de texto",
-    "tarjeta", "tarjetas", "tarjetas personales", "business cards",
-    "porta nombre acrílico", "porta nombres acrílicos", "identificadores", "fotochecks",
-    "porta nombre madera", "porta nombres madera", "identificadores rústicos",
-    "porta post it calendario", "porta post it calendarios", "organizadores de escritorio",
-
-    # Categoría: Accesorios y Premiaciones
-    "llavero", "llaveros", "pendientes", "keychains",
-    "pin", "pines", "prendedores", "insignia", "insignias", "broche",
-    "broches", "trofeo", "trofeos", "copa", "copas", "galardon",
-    "galardones", "medalla", "medallas", "preseas", "condecoracion", "condecoraciones",
-    "placa", "placas", "placas grabadas", "reconocimiento", "reconocimientos", 
-
-    # Categoría: Menaje y Otros
-    "tomatodo", "tomatodos", "botella", "botellas", "vino", "vinos", 
-    "caramañolas", "shakers", "vaso", "vasos", "vasos térmicos",
-    "copas", "copas", "taza", "tazas", "mugs", "pocillos",
-    "cafetera", "cafeteras", "prensas francesas", "mokes",
-    "cuchara", "cucharas", "cubiertos", "utensilios", "batidor",
-    "batidores", "mezclador", "mezcladores", "espumadores", "sticker",
-    "stickers", "calcomanía", "calcomanías", "adhesivo", "adhesivos",
-    "caja", "cajas", "empaques", "packaging", "cubo", "cubos", "dado",
-    "dados", "bloque", "bloques", "alcancía", "alcancías", "huchas", "chanchitos",
-    "pad mouse", "mouse pad", "mousepad", "alfombrillas", "tapetes de escritorio",
-    "prop selfie", "props selfie", "accesorios para fotos", "marcos selfie",
-    "tablet tent", "tablet tents", "habladores", "carpas de mesa", "displays",
-    "kit", "power bank", "manta", "mantas", "pastillero", "pastilleros",
-    "porta frasco", "exhibidor", "pasa diapositiva"
-]
+VARIACIONES_POR_CATEGORIA = {
+    "prendas de cabeza": [
+        "gorro", "gorros", "gorra", "gorras", "chullo", "chullos", "beanies", "pasamontaña",
+        "pasamontañas", "visera", "viseras", "parasoles", "parasoles", "viseras deportivas",
+    ],
+    "ropa y abrigo": [
+        "casaca", "casacas", "chamarra", "chamarras", "camiseta", "camisetas", "cortavientos", 
+        "jackets", "chaqueta", "chaquetas", "blazer", "blazers", "saco", "sacos",
+        "parka", "parkas", "abrigos largos", "gabardina", "gabardinas",
+        "abrigo", "abrigos", "sobretodo", "sobretodos", "prendas de invierno",
+        "polera", "poleras", "sudadera", "sudaderas", "hoodie", "hoodies", "buzo",
+        "buzos", "chaleco", "chalecos", "gilets", "chalecos tácticos",
+        "polo", "polos", "remera", "remeras", "t-shirt", "t-shirts",
+    ],
+    "textiles y hogar": [
+        "toalla", "toallas", "toallones", "paño", "paños", "paños microfibra",
+        "almohada", "almohadas", "almohadas de viaje", "cojin", "cojines",
+        "mandil", "mandiles", "delantal", "delantales", "tabliers",
+    ],
+    "bolsos y transporte": [
+        "mochila", "mochilas", "morral", "morrales", "morrales de espalda", "backpack",
+        "backpacks", "canguro", "canguro", "canguros", "riñonera", "riñoneras", "koalas",
+        "bolsa", "bolsas", "bolso", "bolsos", "bolsas ecológicas", "bolsos deportivos", 
+        "bolsos cruzados", "totes", "notex", "chimpunera", "chimpuneras", "portacalzado",
+        "portacalzados", "bandolera", "bandoleras", "maletin", "maletines",
+    ],
+    "papeleria y oficina": [
+        "cuaderno", "cuadernos", "anillado", "anillados", "espirales",
+        "libreta", "libretas", "journals", "notepad", "notepads",
+        "block", "blocks", "blocs de notas", "tacos de notas", "nota", "notas",
+        "hoja", "hojas", "folio", "folios", "papel", "papeles",
+        "agenda", "agendas", "planificadores", "diario", "diarios",
+        "cuadernillo", "cuadernillos", "folleto", "folletos", "pasquines",
+        "cartuchera", "cartucheras", "estuche", "estuches", "portautiles",
+        "neceser", "neceseres", "bolsos de aseo", "organizadores",
+        "lapicero", "lapiceros", "bolígrafo", "bolígrafos", "pluma", "plumas", "esferos",
+        "resaltador", "resaltadores", "plumon", "plumones", "plumones flúor", "marcadores de texto",
+        "tarjeta", "tarjetas", "tarjetas personales", "business cards",
+        "porta nombre acrílico", "porta nombres acrílicos", "identificadores", "fotochecks",
+        "porta nombre madera", "porta nombres madera", "identificadores rústicos",
+        "porta post it calendario", "porta post it calendarios", "organizadores de escritorio",
+    ],
+    "accesorios y premiaciones": [
+        "llavero", "llaveros", "pendientes", "keychains",
+        "pin", "pines", "prendedores", "insignia", "insignias", "broche",
+        "broches", "trofeo", "trofeos", "copa", "copas", "galardon",
+        "galardones", "medalla", "medallas", "preseas", "condecoracion", "condecoraciones",
+        "placa", "placas", "placas grabadas", "reconocimiento", "reconocimientos", 
+    ],
+    "menaje y otros": [
+        "tomatodo", "tomatodos", "botella", "botellas", "vino", "vinos", 
+        "caramañolas", "shakers", "vaso", "vasos", "vasos térmicos",
+        "copas", "copas", "taza", "tazas", "mugs", "pocillos",
+        "cafetera", "cafeteras", "prensas francesas", "mokes",
+        "cuchara", "cucharas", "cubiertos", "utensilios", "batidor",
+        "batidores", "mezclador", "mezcladores", "espumadores", "sticker",
+        "stickers", "calcomanía", "calcomanías", "adhesivo", "adhesivos",
+        "caja", "cajas", "empaques", "packaging", "cubo", "cubos", "dado",
+        "dados", "bloque", "bloques", "alcancía", "alcancías", "huchas", "chanchitos",
+        "pad mouse", "mouse pad", "mousepad", "alfombrillas", "tapetes de escritorio",
+        "prop selfie", "props selfie", "accesorios para fotos", "marcos selfie",
+        "tablet tent", "tablet tents", "habladores", "carpas de mesa", "displays",
+        "kit", "power bank", "manta", "mantas", "pastillero", "pastilleros",
+        "porta frasco", "exhibidor", "pasa diapositiva",
+    ],
+}
 
 HOJAS_EXCLUIDAS = ["criterios", "tallas", "cronograma", "datos", "deuda", "producción", "proveedor", "proveedores", "costo de proyecto"]
 
@@ -104,15 +106,81 @@ def limpiar_precio(val):
     except:
         return 0.0
 
+def normalizar_texto(texto):
+    """Normaliza texto para busqueda robusta (sin tildes ni simbolos)."""
+    base = unicodedata.normalize("NFKD", str(texto).lower())
+    sin_tildes = "".join(ch for ch in base if not unicodedata.combining(ch))
+    return re.sub(r"[^a-z0-9]+", " ", sin_tildes).strip()
+
+def seleccionar_variaciones():
+    opciones = "\n".join(f"  - {c}" for c in VARIACIONES_POR_CATEGORIA.keys())
+    prompt = (
+        "\n".join([
+            "=" * 55,
+            " Seleccion de producto",
+            "=" * 55,
+            "Ingresa una categoria o palabra clave:",
+            opciones,
+            "Ejemplos: lapicero | papeleria y oficina",
+            ""  # linea en blanco antes del input
+        ])
+        + "> "
+    )
+    entrada = input(prompt).strip()
+    entrada_norm = normalizar_texto(entrada)
+
+    for categoria, lista in VARIACIONES_POR_CATEGORIA.items():
+        if normalizar_texto(categoria) == entrada_norm:
+            return lista
+
+    todas = [v for grupo in VARIACIONES_POR_CATEGORIA.values() for v in grupo]
+    filtradas = [v for v in todas if entrada_norm and entrada_norm in normalizar_texto(v)]
+    return filtradas if filtradas else todas
+
+VARIACIONES = seleccionar_variaciones()
+VARIACIONES_NORMALIZADAS = [normalizar_texto(v) for v in VARIACIONES]
+
 def cumple_busqueda_tokenizada(fila):
     """Busca palabra por palabra en toda la fila."""
-    texto_unido = " ".join([str(x).lower() for x in fila if pd.notna(x)])
-    # Divide el texto por cualquier cosa que no sea letra (espacios, guiones, puntos, etc.)
-    palabras_en_fila = re.findall(r'\w+', texto_unido)
-    for v in VARIACIONES:
-        if v in palabras_en_fila:
+    texto_unido = " ".join([str(x) for x in fila if pd.notna(x)])
+    texto_norm = normalizar_texto(texto_unido)
+    palabras_en_fila = set(texto_norm.split())
+    for v in VARIACIONES_NORMALIZADAS:
+        if v and (v in palabras_en_fila or v in texto_norm):
             return True
     return False
+
+def convertir_total_a_unitario(col_nombre, valor, cantidad):
+    """Convierte totales a precio unitario cuando corresponde."""
+    if cantidad <= 0:
+        return valor
+    nombre = str(col_nombre).lower().strip()
+    if "total producto" in nombre or "total.1" in nombre:
+        return valor / cantidad if valor > 0 else valor
+    if "total" in nombre and valor > cantidad:
+        return valor / cantidad
+    return valor
+
+def buscar_precio_cliente(fila, cols_finals, cols_all, cantidad, v1):
+    """Busca el mejor precio cliente; usa fallback si no hay columnas claras."""
+    candidatos = []
+    for c in cols_finals:
+        val = limpiar_precio(fila[c])
+        if val > v1:
+            candidatos.append(val)
+
+    if not candidatos:
+        fallback_cols = [
+            c for c in cols_all
+            if any(kw in str(c).lower() for kw in ["venta", "precio", "pvp","no igv", "sin igv"])
+        ]
+        for c in fallback_cols:
+            val = limpiar_precio(fila[c])
+            val = convertir_total_a_unitario(c, val, cantidad)
+            if val > v1:
+                candidatos.append(val)
+
+    return round(min(candidatos), 2) if candidatos else 0.0
 
 def recortar_detalle(valor, max_len=20):
     """Recorta el detalle a un maximo de caracteres y agrega puntos suspensivos."""
@@ -131,6 +199,19 @@ def imprimir_tabla_encabezado():
 
 def imprimir_fila_tabla(fila_id, articulo, cantidad, prov, cli, margen):
     print("   " + f"{str(fila_id):>5} | {str(articulo):<20} | {str(cantidad):>5} | {str(prov):>10} | {str(cli):>10} | {str(margen):>8}")
+
+def imprimir_filas_fallidas(fallidas):
+    if not fallidas:
+        return
+    ancho = 90
+    print("   " + "-" * ancho)
+    print("   " + f"{'No devueltas (motivo)':<28} | {'Fila':>5} | {'Articulo':<20} | {'Cant':>5} | {'Prov':>10} | {'Cli':>10}")
+    print("   " + "-" * ancho)
+    for item in fallidas:
+        print(
+            "   "
+            + f"{item['motivo']:<28} | {str(item['fila']):>5} | {str(item['articulo']):<20} | {str(item['cant']):>5} | {str(item['prov']):>10} | {str(item['cli']):>10}"
+        )
 
 # ==========================================
 # 2. ESCANEO DE ARCHIVOS
@@ -176,6 +257,13 @@ for ruta in archivos_a_procesar:
                 c_detalle = next((c for c in df_temp.columns if "detalle" in c.lower()), None)
 
                 if c_cant and (c_provs or c_finals):
+                    # Completa celdas combinadas para cantidad, detalle y precios
+                    df_temp[c_cant] = df_temp[c_cant].ffill()
+                    if c_detalle:
+                        df_temp[c_detalle] = df_temp[c_detalle].ffill()
+                    for c in (c_provs + c_finals):
+                        df_temp[c] = df_temp[c].ffill()
+
                     mask = df_temp.apply(cumple_busqueda_tokenizada, axis=1)
                     if mask.sum() > max_casacas:
                         max_casacas = mask.sum()
@@ -188,15 +276,26 @@ for ruta in archivos_a_procesar:
 
         vistos = set()
         sumadas = 0
+        fallidas = []
         imprimir_tabla_encabezado()
         
         for idx, fila in mejor_df.iterrows():
-            if not cumple_busqueda_tokenizada(fila): continue
+            if not cumple_busqueda_tokenizada(fila):
+                continue
             
             try:
                 # REGLA DE ORO: Cantidad como Entero
                 cantidad = limpiar_y_entero(fila[col_map['cant']])
-                if cantidad <= 0: continue 
+                if cantidad <= 0:
+                    fallidas.append({
+                        "motivo": "cantidad",
+                        "fila": idx,
+                        "articulo": recortar_detalle(fila[col_map.get('detalle')] if col_map.get('detalle') else ""),
+                        "cant": cantidad,
+                        "prov": "-",
+                        "cli": "-",
+                    })
+                    continue 
 
                 # Buscar el mejor precio proveedor (> 15 soles para evitar bordados/setup)
                 v1 = 0.0
@@ -205,18 +304,49 @@ for ruta in archivos_a_procesar:
                     if val >= 0.2: v1 = round(val, 2); break
                 
                 # Buscar el mejor precio cliente
-                v2 = 0.0
-                for c in col_map['finals']:
-                    val = limpiar_precio(fila[c])
-                    if val > v1: v2 = round(val, 2); break # El precio cliente debe ser mayor al del proveedor
+                v2 = buscar_precio_cliente(
+                    fila,
+                    col_map['finals'],
+                    mejor_df.columns,
+                    cantidad,
+                    v1
+                )
 
-                if v1 <= 0 or v2 <= 0 or abs(v1-v2) < 0.5: continue
+                min_diff = 0.5 if v1 >= 5 else 0.1
+                if v1 <= 0 or v2 <= 0 or (v2 - v1) < min_diff:
+                    fallidas.append({
+                        "motivo": "precios",
+                        "fila": idx,
+                        "articulo": recortar_detalle(fila[col_map.get('detalle')] if col_map.get('detalle') else ""),
+                        "cant": cantidad,
+                        "prov": f"S/.{round(v1, 2)}",
+                        "cli": f"S/.{round(v2, 2)}",
+                    })
+                    continue
                 
                 huella = (cantidad, round(v1, 2), round(v2, 2))
-                if huella in vistos: continue
+                if huella in vistos:
+                    fallidas.append({
+                        "motivo": "duplicado",
+                        "fila": idx,
+                        "articulo": recortar_detalle(fila[col_map.get('detalle')] if col_map.get('detalle') else ""),
+                        "cant": cantidad,
+                        "prov": f"S/.{round(v1, 2)}",
+                        "cli": f"S/.{round(v2, 2)}",
+                    })
+                    continue
 
                 margen = ((v2 - v1) / v1) * 100
-                if margen > 450: continue # Filtro de seguridad
+                if margen > 450:
+                    fallidas.append({
+                        "motivo": "margen",
+                        "fila": idx,
+                        "articulo": recortar_detalle(fila[col_map.get('detalle')] if col_map.get('detalle') else ""),
+                        "cant": cantidad,
+                        "prov": f"S/.{round(v1, 2)}",
+                        "cli": f"S/.{round(v2, 2)}",
+                    })
+                    continue # Filtro de seguridad
 
                 vistos.add(huella)
                 detalle_col = col_map.get('detalle')
@@ -238,9 +368,19 @@ for ruta in archivos_a_procesar:
                 else:
                     acumulador_3 += margen; contador_3 += 1
                 sumadas += 1
-            except: continue
+            except:
+                fallidas.append({
+                    "motivo": "error",
+                    "fila": idx,
+                    "articulo": recortar_detalle(fila[col_map.get('detalle')] if col_map.get('detalle') else ""),
+                    "cant": "-",
+                    "prov": "-",
+                    "cli": "-",
+                })
+                continue
 
         print(f"   ✅ Éxito en '{mejor_hoja}'. Filas: {sumadas}")
+        imprimir_filas_fallidas(fallidas)
 
     except Exception as e:
         print(f"   💥 Error: {e}")
