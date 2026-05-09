@@ -6,7 +6,7 @@ import unicodedata
 # ==========================================
 # 1. CONFIGURACIÓN INICIAL
 # ==========================================
-CARPETA_EXCEL = r"E:\TASA" 
+CARPETA_EXCEL = r"E:\otros" 
 VARIACIONES_POR_CATEGORIA = {
     "prendas de cabeza": [
         "gorro", "gorros", "gorra", "gorras", "chullo", "chullos", "beanies", "pasamontaña",
@@ -14,7 +14,7 @@ VARIACIONES_POR_CATEGORIA = {
     ],
     "ropa y abrigo": [
         "casaca", "casacas", "chamarra", "chamarras", "camiseta", "camisetas", "cortavientos", 
-        "jackets", "chaqueta", "chaquetas", "blazer", "blazers", "saco", "sacos",
+        "jackets", "chaqueta", "chaquetas", "blazer", "blazers",
         "parka", "parkas", "abrigos largos", "gabardina", "gabardinas",
         "abrigo", "abrigos", "sobretodo", "sobretodos", "prendas de invierno",
         "polera", "poleras", "sudadera", "sudaderas", "hoodie", "hoodies", "buzo",
@@ -388,11 +388,86 @@ for ruta in archivos_a_procesar:
 # ==========================================
 # 4. RESULTADOS FINALES
 # ==========================================
-def promediar(acum, cont):
-    return f"{round(acum / cont, 2)}%" if cont > 0 else "0.00%"
+def promediar(acum, cont, contexto=None, margen_defecto=35.0, avisar=False):
+    if cont > 0:
+        return round(acum / cont, 2)
+    if avisar:
+        detalle = f" para {contexto}" if contexto else ""
+        print(f"   ⚠️ Sin datos{detalle}; usando margen por defecto de {margen_defecto:.2f}%")
+    return margen_defecto
+
+def generar_cotizacion_rapida():
+    print("\n" + "=" * 45)
+    print(" Cotizacion rapida")
+    print("=" * 45)
+
+    articulo_nombre = input("Producto: ").strip()
+    while True:
+        try:
+            cantidad_solicitada = int(input("Cantidad: ").strip())
+            if cantidad_solicitada <= 0:
+                print("   ⚠️ La cantidad debe ser mayor a 0.")
+                continue
+            break
+        except ValueError:
+            print("   ⚠️ Ingresa una cantidad valida (entero).")
+
+    while True:
+        try:
+            precio_proveedor_nuevo = float(input("Precio proveedor (S/.): ").strip())
+            if precio_proveedor_nuevo <= 0:
+                print("   ⚠️ El precio debe ser mayor a 0.")
+                continue
+            break
+        except ValueError:
+            print("   ⚠️ Ingresa un precio valido (numero).")
+
+    articulo_norm = normalizar_texto(articulo_nombre)
+    variaciones_norm = [normalizar_texto(v) for grupo in VARIACIONES_POR_CATEGORIA.values() for v in grupo]
+    coincide = any(
+        articulo_norm and (articulo_norm in v or v in articulo_norm)
+        for v in variaciones_norm
+    )
+    if not coincide:
+        print("   ⚠️ El producto no coincide con las variaciones conocidas. Se continuara igualmente.")
+
+    if cantidad_solicitada > 1000:
+        margen_promedio = promediar(
+            acumulador_1,
+            contador_1,
+            contexto=f"producto '{articulo_nombre}'",
+            avisar=True,
+        )
+    elif cantidad_solicitada > 500:
+        margen_promedio = promediar(
+            acumulador_2,
+            contador_2,
+            contexto=f"producto '{articulo_nombre}'",
+            avisar=True,
+        )
+    else:
+        margen_promedio = promediar(
+            acumulador_3,
+            contador_3,
+            contexto=f"producto '{articulo_nombre}'",
+            avisar=True,
+        )
+
+    precio_final_unitario = round(precio_proveedor_nuevo * (1 + (margen_promedio / 100)), 2)
+    total_cotizacion = round(precio_final_unitario * cantidad_solicitada, 2)
+
+    print("\n" + "-" * 45)
+    print(f"Producto: {articulo_nombre}")
+    print(f"Cantidad: {cantidad_solicitada}")
+    print(f"Margen promedio aplicado: {margen_promedio:.2f}%")
+    print(f"Precio Unitario Cliente (S/.): {precio_final_unitario:.2f}")
+    print(f"Total de la Cotizacion (S/.): {total_cotizacion:.2f}")
+    print("-" * 45)
 
 print("\n" + "="*45)
-print(f"📊 Margen Promedio (> 1000): {promediar(acumulador_1, contador_1)} ({contador_1} casos)")
-print(f"📊 Margen Promedio (> 500):  {promediar(acumulador_2, contador_2)} ({contador_2} casos)")
-print(f"📊 Margen Promedio (Resto):  {promediar(acumulador_3, contador_3)} ({contador_3} casos)")
+print(f"📊 Margen Promedio (> 1000): {promediar(acumulador_1, contador_1):.2f}% ({contador_1} casos)")
+print(f"📊 Margen Promedio (> 500):  {promediar(acumulador_2, contador_2):.2f}% ({contador_2} casos)")
+print(f"📊 Margen Promedio (Resto):  {promediar(acumulador_3, contador_3):.2f}% ({contador_3} casos)")
 print("="*45)
+
+generar_cotizacion_rapida()
