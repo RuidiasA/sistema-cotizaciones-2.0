@@ -6,7 +6,7 @@ import unicodedata
 # ==========================================
 # 1. CONFIGURACIÓN INICIAL
 # ==========================================
-CARPETA_EXCEL = r"E:\otros" 
+CARPETA_EXCEL = r"E:\TASA" 
 VARIACIONES_POR_CATEGORIA = {
     "prendas de cabeza": [
         "gorro", "gorros", "gorra", "gorras", "chullo", "chullos", "beanies", "pasamontaña",
@@ -135,18 +135,31 @@ def seleccionar_variaciones():
 
     todas = [v for grupo in VARIACIONES_POR_CATEGORIA.values() for v in grupo]
     filtradas = [v for v in todas if entrada_norm and entrada_norm in normalizar_texto(v)]
-    return filtradas if filtradas else todas
+    
+    if filtradas:
+        return filtradas
+    
+    print(f"⚠️ No se encontró la categoría. Buscando específicamente por: '{entrada}'")
+    return [entrada]
 
 VARIACIONES = seleccionar_variaciones()
 VARIACIONES_NORMALIZADAS = [normalizar_texto(v) for v in VARIACIONES]
 
 def cumple_busqueda_tokenizada(fila):
-    """Busca palabra por palabra en toda la fila."""
+    """Busca coincidencia exacta de tokens para evitar falsos positivos."""
+    # Convertimos toda la fila a un solo string normalizado
     texto_unido = " ".join([str(x) for x in fila if pd.notna(x)])
     texto_norm = normalizar_texto(texto_unido)
     palabras_en_fila = set(texto_norm.split())
+    
     for v in VARIACIONES_NORMALIZADAS:
-        if v and (v in palabras_en_fila or v in texto_norm):
+        v_norm = normalizar_texto(v)
+        # Verificamos si la palabra clave existe como palabra completa
+        if v_norm in palabras_en_fila:
+            # FILTRO EXTRA: Si buscas bolsos, evita que capture filas con "casaca"
+            if "bolso" in VARIACIONES_NORMALIZADAS[0] or "mochila" in VARIACIONES_NORMALIZADAS[0]:
+                if "casaca" in palabras_en_fila or "polo" in palabras_en_fila:
+                    return False # Ignora si parece ser una prenda de vestir
             return True
     return False
 
