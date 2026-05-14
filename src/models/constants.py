@@ -1,70 +1,200 @@
-DEFAULT_EXCEL_FOLDER = r"E:\\casacas"
+DEFAULT_EXCEL_FOLDER = r"C:\Users\Karina\Downloads\Cotizacion-textil"
 
 VARIACIONES_POR_CATEGORIA = {
     "prendas de cabeza": [
-        "gorro", "gorros", "gorra", "gorras", "chullo", "chullos", "beanies", "pasamontana",
-        "pasamontanas", "visera", "viseras", "parasoles", "parasoles", "viseras deportivas",
+        {
+            "tags": ["gorro", "gorros", "gorra", "gorras", "beanie", "beanies", "gorro corporativo", "gorro trucker", "gorro carbonero", "gorros drill", "gorros publicitarios", "gorros safari", "gorros tapanuca", "chullo", "chullos", ],
+            "exclude": ["natacion", "baño"]
+        },                                                                              {
+            "tags": ["viera promocional"]
+        },                                                                   
+        {
+            "tags": ["visera", "viseras", "parasol", "parasoles", "viseras deportivas"],
+            "exclude": ["auto", "coche"]
+        },
+        {
+            "tags": ["pasamontaña", "pasamontañas", "balaclava"],
+            "exclude": []
+        }
     ],
     "ropa y abrigo": [
-        "casaca", "casacas", "chamarra", "chamarras", "camiseta", "camisetas", "cortavientos",
-        "jackets", "chaqueta", "chaquetas", "blazer", "blazers",
-        "parka", "parkas", "abrigos largos", "gabardina", "gabardinas",
-        "abrigo", "abrigos", "sobretodo", "sobretodos", "prendas de invierno",
-        "polera", "poleras", "sudadera", "sudaderas", "hoodie", "hoodies", "buzo",
-        "buzos", "chaleco", "chalecos", "gilets", "chalecos tacticos",
-        "polo", "polos", "remera", "remeras", "t-shirt", "t-shirts", "pantalon", "pantalones", "jean", "jeans", "denim", "short", "shorts", "bermuda",
+        {
+            "tags": ["casaca", "casacas", "chamarra", "chamarras", "jacket", "jackets", "chaqueta", "chaquetas", "cortavientos", "cascaca polar", "casaca corportativa", "rompevientos"],
+            "exclude": ["cuero"]
+        },
+        {
+            "tags": ["parka", "parkas", "abrigo", "abrigos", "sobretodo", "sobretodos", "gabardina", "gabardinas", "prendas de invierno"],
+            "exclude": []
+        },
+        {
+            "tags": ["polera", "poleras", "sudadera", "sudaderas", "hoodie", "hoodies", "buzo", "buzos"],
+            "exclude": ["pantalon", "short"]
+        },
+        {
+            "tags": ["polo", "polos", "polo cuello camisero", "polos prublicitarios", "remera", "remeras", "t-shirt", "t-shirts", "camiseta", "camisetas", "camiseta deportiva", "camisetas deportivas"],
+            "exclude": ["manga larga"]
+        },
+        {
+            "tags": ["camisa", "camisas", "blusa", "blusas"], 
+            "exclude": [""]
+        },
+        {
+            "tags": ["chaleco", "chalecos", "gilet", "gilets", "chalecos tacticos", "chaleco corporativo - acolchado", "chaleco corporativo", "chalecos polar", "chalecos promocional"],
+            "exclude": ["salvavidas"]
+        },
+        {
+            "tags": ["pantalon", "pantalones", "pantalon drill", "pantalon jean", "jean", "jeans", "denim", "short", "shorts", "bermuda", "bermudas"],
+            "exclude": []
+        },
+        {
+            "tags": ["blazer", "blazers", "saco", "sacos de vestir"],
+            "exclude": ["saco de dormir", "saco de arena"]
+        },
+        {
+            "tags": ["chalina", "chalinas"],
+            "exclude": []
+        },
+        {
+            "tags": ["mameluco", "mameluco", "overol", "overoles", "enterizo", "enterizos"],
+        },
+        {
+            "tags": ["mangas", "manga", "manga larga", "mangas largas"],
+        }
     ],
     "textiles y hogar": [
-        "toalla", "toallas", "toallones", "pano", "panos", "panos microfibra",
-        "almohada", "almohadas", "almohadas de viaje", "cojin", "cojines",
-        "mandil", "mandiles", "delantal", "delantales", "tabliers",
+        {
+            "tags": ["toalla", "toallas", "toallon", "toallones", "toalla de mano", "toalla de baño"],
+            "exclude": ["papel"]
+        },
+        {
+            "tags": ["paño", "paños", "paño microfibra", "paños microfibra", "mopa"],
+            "exclude": ["lentes"]
+        },
+        {
+            "tags": ["almohada", "almohadas", "almohada de viaje", "cojin", "cojines"],
+            "exclude": []
+        },
+        {
+            "tags": ["mandil", "mandiles", "delantal", "delantales", "tablier", "tabliers"],
+            "exclude": []
+        }
     ],
     "bolsos y transporte": [
-        "mochila", "mochilas", "morral", "morrales", "morrales de espalda", "backpack",
-        "backpacks", "canguro", "canguro", "canguros", "rinonera", "rinoneras", "koalas",
-        "bolsa", "bolsas", "bolso", "bolsos", "bolsas ecologicas", "bolsos deportivos",
-        "bolsos cruzados", "totes", "notex", "chimpunera", "chimpuneras", "portacalzado",
-        "portacalzados", "bandolera", "bandoleras", "maletin", "maletines",
+        {
+            "tags": ["mochila", "mochilas", "backpack", "backpacks", "morral de espalda"],
+            "exclude": ["infantil", "escolar"]
+        },
+        {
+            "tags": ["morral", "morrales", "bandolera", "bandoleras", "bolso cruzado", "bolsos cruzados"],
+            "exclude": []
+        },
+        {
+            "tags": ["canguro", "canguros", "riñonera", "riñoneras", "koala", "koalas"],
+            "exclude": []
+        },
+        {
+            "tags": ["bolsa", "bolsas", "bolso", "bolsos", "bolsa ecologica", "bolsas ecologicas", "tote", "totes", "notex", "bolsa de tela"],
+            "exclude": ["plastico", "basura", "aseo", "celofan", "papel", "regalo"]
+        },
+        {
+            "tags": ["maletin", "maletines", "chimpunera", "chimpuneras", "portacalzado", "portacalzados"],
+            "exclude": []
+        }
     ],
     "papeleria y oficina": [
-        "cuaderno", "cuadernos", "anillado", "anillados", "espirales",
-        "libreta", "libretas", "journals", "notepad", "notepads",
-        "block", "blocks", "blocs de notas", "tacos de notas", "nota", "notas",
-        "hoja", "hojas", "folio", "folios", "papel", "papeles",
-        "agenda", "agendas", "planificadores", "diario", "diarios",
-        "cuadernillo", "cuadernillos", "folleto", "folletos", "pasquines",
-        "cartuchera", "cartucheras", "estuche", "estuches", "portautiles",
-        "neceser", "neceseres", "bolsos de aseo", "organizadores",
-        "lapicero", "lapiceros", "boligrafo", "boligrafos", "pluma", "plumas", "esferos",
-        "resaltador", "resaltadores", "plumon", "plumones", "plumones fluor", "marcadores de texto",
-        "tarjeta", "tarjetas", "tarjetas personales", "business cards",
-        "porta nombre acrilico", "porta nombres acrilicos", "identificadores", "fotochecks",
-        "porta nombre madera", "porta nombres madera", "identificadores rusticos",
-        "porta post it calendario", "porta post it calendarios", "organizadores de escritorio",
+        {
+            "tags": ["cuaderno", "cuadernos", "libreta", "libretas", "journal", "journals", "notepad", "notepads", "block", "blocks", "bloc de notas", "taco de notas", "cuadernillo", "cuadernillos", "anillado", "anillados"],
+            "exclude": []
+        },
+        {
+            "tags": ["agenda", "agendas", "planificador", "planificadores", "diario", "diarios"],
+            "exclude": []
+        },
+        {
+            "tags": ["hoja", "hojas", "folio", "folios", "papel", "papeles", "resma"],
+            "exclude": ["higienico", "toalla"]
+        },
+        {
+            "tags": ["cartuchera", "cartucheras", "estuche", "estuches", "portautiles", "neceser", "neceseres", "bolso de aseo", "organizador", "organizadores"],
+            "exclude": ["herramientas"]
+        },
+        {
+            "tags": ["lapicero", "lapiceros", "boligrafo", "boligrafos", "pluma", "plumas", "esfero", "esferos"],
+            "exclude": ["repuesto", "tinta"]
+        },
+        {
+            "tags": ["resaltador", "resaltadores", "plumon", "plumones", "marcador", "marcadores", "marcadores de texto"],
+            "exclude": ["pizarra"]
+        },
+        {
+            "tags": ["tarjeta", "tarjetas", "tarjeta personal", "tarjetas personales", "business card", "business cards"],
+            "exclude": ["credito", "debito"]
+        },
+        {
+            "tags": ["fotocheck", "fotochecks", "identificador", "identificadores", "porta nombre", "identificadores rusticos"],
+            "exclude": []
+        }
     ],
     "accesorios y premiaciones": [
-        "llavero", "llaveros", "pendientes", "keychains",
-        "pin", "pines", "prendedores", "insignia", "insignias", "broche",
-        "broches", "trofeo", "trofeos", "copa", "copas", "galardon",
-        "galardones", "medalla", "medallas", "preseas", "condecoracion", "condecoraciones",
-        "placa", "placas", "placas grabadas", "reconocimiento", "reconocimientos",
+        {
+            "tags": ["llavero", "llaveros", "keychain", "keychains"],
+            "exclude": []
+        },
+        {
+            "tags": ["pin", "pines", "prendedor", "prendedores", "insignia", "insignias", "broche", "broches"],
+            "exclude": []
+        },
+        {
+            "tags": ["trofeo", "trofeos", "copa", "copas", "galardon", "galardones", "medalla", "medallas", "presea", "preseas", "condecoracion", "condecoraciones"],
+            "exclude": ["vino", "agua", "vidrio", "cristal"]
+        },
+        {
+            "tags": ["vinchas"],
+            "exclude": []
+        },
+        {
+            "tags": ["placa", "placas", "placa grabada", "reconocimiento", "reconocimientos"],
+            "exclude": ["auto", "vehiculo"]
+        }
     ],
     "menaje y otros": [
-        "tomatodo", "tomatodos", "botella", "botellas", "vino", "vinos",
-        "caramanolas", "shakers", "vaso", "vasos", "vasos termicos",
-        "copas", "copas", "taza", "tazas", "mugs", "pocillos",
-        "cafetera", "cafeteras", "prensas francesas", "mokes",
-        "cuchara", "cucharas", "cubiertos", "utensilios", "batidor",
-        "batidores", "mezclador", "mezcladores", "espumadores", "sticker",
-        "stickers", "calcomania", "calcomanias", "adhesivo", "adhesivos",
-        "caja", "cajas", "empaques", "packaging", "cubo", "cubos", "dado",
-        "dados", "bloque", "bloques", "alcancia", "alcancias", "huchas", "chanchitos",
-        "pad mouse", "mouse pad", "mousepad", "alfombrillas", "tapetes de escritorio",
-        "prop selfie", "props selfie", "accesorios para fotos", "marcos selfie",
-        "tablet tent", "tablet tents", "habladores", "carpas de mesa", "displays",
-        "kit", "power bank", "manta", "mantas", "pastillero", "pastilleros",
-        "porta frasco", "exhibidor", "pasa diapositiva",
-    ],
+        {
+            "tags": ["tomatodo", "tomatodos", "botella", "botellas", "caramañola", "caramañolas", "shaker", "shakers"],
+            "exclude": ["vino", "licor"]
+        },
+        {
+            "tags": ["vaso", "vasos", "vaso termico", "vasos termicos", "taza", "tazas", "mug", "mugs", "pocillo", "pocillos"],
+            "exclude": ["trofeo", "premios"]
+        },
+        {
+            "tags": ["copa", "copas", "copa de vidrio", "copas de cristal"],
+            "exclude": ["trofeo", "deportivo", "oro", "plata"]
+        },
+        {
+            "tags": ["cafetera", "cafeteras", "prensa francesa", "moke", "mokes"],
+            "exclude": []
+        },
+        {
+            "tags": ["cuchara", "cucharas", "cubierto", "cubiertos", "utensilio", "utensilios"],
+            "exclude": []
+        },
+        {
+            "tags": ["sticker", "stickers", "calcomania", "calcomanias", "adhesivo", "adhesivos"],
+            "exclude": []
+        },
+        {
+            "tags": ["caja", "cajas", "empaque", "empaques", "packaging"],
+            "exclude": ["fuerte", "herramientas"]
+        },
+        {
+            "tags": ["mouse pad", "mousepad", "alfombrilla", "alfombrillas", "tapete de escritorio"],
+            "exclude": []
+        },
+        {
+            "tags": ["kit", "power bank", "manta", "pastillero", "alcancia"],
+            "exclude": []
+        }
+    ]
 }
 
 HOJAS_EXCLUIDAS = [

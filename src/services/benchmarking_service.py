@@ -1,0 +1,159 @@
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Dict, List, Optional
+
+import pandas as pd
+
+from ..models.entities import ArchetypeData, BenchmarkingMatrix, ScanRow
+from .text_utils import (
+    es_servicio_o_logistica,
+    extraer_material,
+    extraer_segmento_calidad,
+    normalizar_texto,
+    remover_ruido_de_especificacion,
+)
+
+
+class BenchmarkingService:
+    """Genera matrices de benchmarking por arquetipo de producto."""
+
+    def __init__(self, umbral_confianza: int = 3) -> None:
+        # Estado inmutable para mantener operaciones thread-safe.
+        self._umbral_confianza = max(1, int(umbral_confianza))
+
+    def extraer_arquetipo(self, fila_detalle: str) -> Optional[str]:
+        if es_servicio_o_logistica(fila_detalle):
+            return None
+
+        limpio = remover_ruido_de_especificacion(fila_detalle)
+        limpio_norm = normalizar_texto(limpio)
+        if not limpio_norm:
+            return None
+
+        material = extraer_material(limpio)
+        segmento = extraer_segmento_calidad(limpio)
+        base = self._extraer_producto_base(limpio, material, segmento)
+
+        if not base:
+            return None
+
+        partes = [base]
+        if material and material not in partes:
+            partes.append(material)
+        if segmento and segmento not in partes:
+            partes.append(segmento)
+
+        return " ".join(partes).strip()
+
+    def es_servicio_excluido(self, articulo: str) -> bool:
+        return es_servicio_o_logistica(articulo)
+
+    def generar_benchmarking(self, scan_rows: List[ScanRow], categoria: str) -> BenchmarkingMatrix:
+        """Construye una matriz por arquetipos usando agregaciones de pandas."""
+        fecha = datetime.now().isoformat(timespec="seconds")
+
+        records: List[Dict[str, object]] = []
+        for row in scan_rows:
+            if row.cantidad <= 0:
+                continue
+            if row.margen <= 0:
+                continue
+
+            arquetipo = self.extraer_arquetipo(row.articulo)
+            if not arquetipo:
+                continue
+
+            records.append(
+                {
+                    "arquetipo": arquetipo,
+                    "tier": self._tier_para_cantidad(row.cantidad),
+                    "margen": float(row.margen),
+                }
+            )
+
+        if not records:
+            return BenchmarkingMatrix(
+                categoria=categoria,
+                arquetipos=[],
+                fecha_generacion=fecha,
+                total_registros_procesados=0,
+            )
+
+        df = pd.DataFrame(records)
+        grouped = (
+            df.groupby(["arquetipo", "tier"], as_index=False)
+            .agg(margen_promedio=("margen", "mean"), casos=("margen", "count"))
+            .sort_values(["arquetipo", "tier"])
+        )
+
+        bucket: Dict[str, Dict[str, Dict[str, float]]] = {}
+        for row in grouped.itertuples(index=False):
+            arquetipo = str(row.arquetipo)
+            tier = str(row.tier)
+            bucket.setdefault(arquetipo, {})[tier] = {
+                "margen": round(float(row.margen_promedio), 2),
+                "casos": int(row.casos),
+            }
+
+        arquetipos: List[ArchetypeData] = []
+        for nombre, tiers in sorted(bucket.items()):
+            t100 = tiers.get("100", {"margen": 0.0, "casos": 0})
+            t500 = tiers.get("500", {"margen": 0.0, "casos": 0})
+            t1000 = tiers.get("1000", {"margen": 0.0, "casos": 0})
+
+            casos_totales = int(t100["casos"] + t500["casos"] + t1000["casos"])
+            arquetipos.append(
+                ArchetypeData(
+                    nombre_arquetipo=nombre,
+                    categoria=categoria,
+                    margen_tier_100=float(t100["margen"]),
+                    casos_tier_100=int(t100["casos"]),
+                    margen_tier_500=float(t500["margen"]),
+                    casos_tier_500=int(t500["casos"]),
+                    margen_tier_1000=float(t1000["margen"]),
+                    casos_tier_1000=int(t1000["casos"]),
+                    actualizado_en=fecha,
+                    confianza_general=self.calcular_confianza(casos_totales),
+                )
+            )
+
+        return BenchmarkingMatrix(
+            categoria=categoria,
+            arquetipos=arquetipos,
+            fecha_generacion=fecha,
+            total_registros_procesados=len(records),
+        )
+
+    def calcular_confianza(self, casos_totales: int) -> float:
+        confianza = (float(casos_totales) / float(self._umbral_confianza)) * 100.0
+        return round(min(100.0, max(0.0, confianza)), 2)
+
+    def _tier_para_cantidad(self, cantidad: int) -> str:
+        if cantidad >= 1000:
+            return "1000"
+        if cantidad >= 500:
+            return "500"
+        return "100"
+
+    def _extraer_producto_base(
+        self,
+        texto: str,
+        material: Optional[str],
+        segmento: Optional[str],
+    ) -> str:
+        texto_norm = normalizar_texto(texto)
+        if not texto_norm:
+            return ""
+
+        tokens = texto_norm.split()
+        descartes = {"de", "con", "para", "y", "en", "el", "la", "los", "las"}
+        if material:
+            descartes.add(normalizar_texto(material))
+        if segmento:
+            descartes.add(normalizar_texto(segmento))
+
+        for token in tokens:
+            if token not in descartes:
+                return token.upper()
+        return ""

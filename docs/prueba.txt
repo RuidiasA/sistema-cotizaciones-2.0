@@ -484,3 +484,148 @@ print(f"📊 Margen Promedio (Resto):  {promediar(acumulador_3, contador_3):.2f}
 print("="*45)
 
 generar_cotizacion_rapida()
+
+
+
+
+
+
+
+
+
+
+
+
+
+def _find_best_sheet(
+        self,
+        file_path: str,
+        sheet_names: Sequence[str],
+        search_pack: dict,  # <--- Cambiado de variaciones_norm
+    ) -> Tuple[Optional[pd.DataFrame], Optional[str], Dict[str, object], int]:
+        best_df: Optional[pd.DataFrame] = None
+        best_sheet: Optional[str] = None
+        col_map: Dict[str, object] = {}
+        max_matches = -1
+
+        for sheet_name in sheet_names:
+            if any(ex in sheet_name.lower() for ex in self._hojas_excluidas):
+                continue
+            
+            df_check = pd.read_excel(file_path, sheet_name=sheet_name, header=None, nrows=25)
+            header_row = self._detect_header_row(df_check)
+            if header_row is None:
+                continue
+                
+            df_temp = pd.read_excel(file_path, sheet_name=sheet_name, header=header_row)
+            df_temp.columns = [str(c).replace("\n", " ").strip() for c in df_temp.columns]
+
+            # ... (Lógica de detección de columnas c_cant, c_finals, c_provs, c_detalle se mantiene igual) ...
+            # [Mantener el código de detección de columnas que ya tienes]
+
+            if c_cant and (c_provs or c_finals):
+                # ... (Lógica de ffill se mantiene igual) ...
+                
+                # Pasamos el search_pack a la máscara
+                mask = df_temp.apply(
+                    lambda row: self._cumple_busqueda_tokenizada(row, search_pack),
+                    axis=1,
+                )
+                matches = int(mask.sum())
+                if matches > max_matches:
+                    max_matches = matches
+                    best_df = df_temp
+                    best_sheet = sheet_name
+                    col_map = {
+                        "cant": c_cant,
+                        "provs": c_provs,
+                        "finals": c_finals,
+                        "detalle": c_detalle,
+                    }
+
+        return best_df, best_sheet, col_map, max_matches
+
+
+
+
+
+
+
+
+
+
+
+
+
+def _process_rows(
+        self,
+        df: pd.DataFrame,
+        col_map: Dict[str, object],
+        search_pack: dict,  # <--- Cambiado de variaciones_norm
+        report: FileScanReport,
+    ) -> None:
+        import re
+        from src.services.text_utils import normalizar_texto
+
+        vistos = set()
+        stats = PriceStats()
+        
+        tags = search_pack.get("tags", []) # Extraemos los sinónimos
+
+        # Intentamos detectar si existe una columna de "Detalle"
+        col_detalle = col_map.get("detalle") 
+
+        for idx, fila in df.iterrows():
+            # 1. Validación general (Inclusión y Exclusión en toda la fila)
+            if not self._cumple_busqueda_tokenizada(fila, search_pack):
+                continue
+            
+            # 2. FILTRADO ESTRICTO EN COLUMNA DETALLE
+            # Si tenemos la columna detalle, al menos UN tag del clúster debe estar ahí
+            if col_detalle and col_detalle in fila:
+                texto_col = normalizar_texto(str(fila[col_detalle]))
+                # Verificamos si alguno de los tags hace match
+                match_detalle = any(
+                    re.search(rf'\b{re.escape(normalizar_texto(t))}\b', texto_col) 
+                    for t in tags
+                )
+                if not match_detalle:
+                    continue
+
+            try:
+                # ... (El resto de la lógica de limpieza de precios y márgenes se mantiene igual) ...
+                # [Mantener tu código de limpieza_y_entero, v1, v2, margen, etc.]
+                
+                # --- (Al final de la lógica de éxito, donde haces el append) ---
+                v1 = round(v1, 2) # Ejemplo de lo que ya tienes
+                v2 = self._buscar_precio_cliente(...) # Ejemplo
+                
+                # ... (Lógica de huella, duplicados y márgenes altos) ...
+
+                # Si todo sale bien:
+                detalle_raw = fila[col_map.get("detalle")] if col_map.get("detalle") else ""
+                detalle = recortar_detalle(detalle_raw)
+                margen_val = ((v2 - v1) / v1) * 100 if v1 else 0.0
+                
+                report.matched_rows.append(
+                    ScanRow(
+                        fila_id=int(idx),
+                        articulo=detalle,
+                        cantidad=cantidad,
+                        precio_prov=v1,
+                        precio_cli=v2,
+                        margen=round(margen_val, 2),
+                    )
+                )
+                stats.add_margin(cantidad, margen_val)
+
+            except Exception:
+                # ... (Manejo de failed_rows igual) ...
+                pass
+
+        # 3. ORDENAMIENTO ALFABÉTICO (In-place)
+        report.matched_rows.sort(
+            key=lambda row: (str(row.articulo).strip().lower() if row.articulo else "")
+        )
+
+        report.stats = stats

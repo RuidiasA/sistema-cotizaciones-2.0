@@ -1,0 +1,135 @@
+camisa 100 
+camisa 500 
+camisa 1000 
+
+
+polo 100
+polo 500
+polo 1000
+
+
+
+actualmente ya obtengo los datos de una categoria (prendas de cabeza, ropa y abrigo,etc) definida en el diccionario, quiero que al buscar una categoria, me devuelva los margenes (100(resto), 500 y 1000) de los productos en un excel con un formato similar a este, ejemplo:
+escojo la categoria prendas de cabeza y pulso el boton de iniciar escaneo
+
+el excel que debe devolverme seria:
+gorro 100     margen_100
+gorro 500     margen_500  
+gorro 1000    margen_1000
+
+visera 100    margen_100
+visera 500    margen_500
+visera 1000   margen_1000  
+
+...           ...
+...           ...
+...           ...
+
+
+
+
+el funcionamiento sigue mas o menos esa logica, pero la idea es que debería obtener varios margenes de un producto (no estoy seguro si agruparlos por nombres muy similares o por proveedor(esto es menos exacto supongo porque para diferentes cotizaciones anteriores dudo que haya usado muchas veces un mismo producto al mismo proveedor), para ser mas precisos se va a necesitar extraer datos de mas cotizaciones anteriores) la idea es tener algo asi:
+
+gorro corporativo 100   -----   margen 100
+gorro corporativo 500   -----   margen 500
+gorro corporativo 1000   -----   margen 1000
+
+gorro trucker 100   -----   margen 100
+gorro trucker 500   -----   margen 500
+gorro trucker 1000   -----   margen 1000
+
+gorros publicitarios 100   -----   margen 100
+gorros publicitarios 500   -----   margen 500
+gorros publicitarios 1000   -----   margen 1000
+
+
+en caso de abrigos:
+casaca 100   ...
+...
+...
+
+polera 100   ....
+...
+...
+
+
+obtener margenes de los productos de una categoria y devolver los margenes 100, 500 y 1000 
+
+
+
+
+Para que **Compipro 2.0** evolucione de un buscador de precios a una herramienta de **Inteligencia de Negocios (BI)** para **COMPINA**, la clave no está en buscar coincidencias exactas, sino en la **Categorización por Arquetipos**.
+
+Tu instinto es correcto: agrupar por **Proveedor** dispersaría demasiado la muestra y no te daría un "estándar de mercado". La lógica debe centrarse en la **Similitud Semántica** de los productos para generar ese histórico de márgenes que necesitas.
+
+Aquí tienes la definición de la lógica paso a paso para implementar esta funcionalidad:
+
+---
+
+## Lógica de Benchmarking Granular
+
+### 1. Definición de Arquetipos (Sub-productos)
+
+En lugar de tratar a todos los "gorros" como una sola masa de datos, el sistema debe aplicar un segundo filtro después del escaneo inicial.
+
+* **Identificación por Prefijos/Sufijos:** El sistema debe identificar patrones recurrentes en la descripción (ej: "Trucker", "Publicitario", "Corporativo", "Taslan").
+* **Asociación al Clúster:** Un clúster de "Gorro" en el `VariationService` ahora tendrá "Sub-clústeres" o etiquetas de especialidad.
+
+### 2. El Proceso de Extracción y Clasificación
+
+Para obtener los márgenes que mencionas, la lógica debe seguir este flujo de "embudo":
+
+1. **Filtro de Categoría:** El usuario elige "Prendas de cabeza". El sistema recupera todos los términos asociados (Gorro, Visera, Chullo).
+2. **Escaneo de Fuentes:** Se extraen **todas** las filas encontradas en el histórico de cotizaciones de la carpeta seleccionada.
+3. **Normalización Quirúrgica:**
+* Se eliminan palabras "ruido" (Material, Color, Medidas, etc.).
+* Se extraen los primeros 2 o 3 términos significativos para definir el nombre del producto (ej: "Gorro Trucker Bordado").
+
+
+4. **Bucketizing (Distribución por Tiers):**
+Cada fila encontrada se clasifica según su columna de cantidad en tres contenedores lógicos:
+* **Tier 100 (Resto):** Cantidad $< 500$.
+* **Tier 500:** $500 \le$ Cantidad $< 1000$.
+* **Tier 1000:** Cantidad $\ge 1000$.
+
+
+
+### 3. Agregación y Cálculo de Representatividad
+
+Dado que una misma cotización pudo usarse varias veces o con diferentes criterios, no usaremos un promedio simple (que es sensible a errores de dedo), sino una **Mediana Ponderada**:
+
+* **Cálculo del Margen Representativo:** Para cada Arquetipo (ej: "Gorro Trucker") en su Tier (ej: 500), se calcula el margen que más se repite o el punto medio de la muestra.
+* **Factor de Confianza:** Se debe contar cuántas veces aparece ese producto en el histórico.
+* *Ejemplo:* "Gorro Trucker 500" con 15 registros tiene más validez que uno con solo 1 registro.
+
+
+
+### 4. Estructura de la Matriz de Salida (Excel)
+
+El reporte generado debe tener una estructura plana para que sea fácil de filtrar en la agencia:
+
+| Producto (Arquetipo) | Tier (Cantidad) | Margen Referencial | Muestra (Nro. Cotizaciones) |
+| --- | --- | --- | --- |
+| Gorro Corporativo | 100 | 50.00% | 12 registros |
+| Gorro Corporativo | 500 | 45.00% | 8 registros |
+| Gorro Corporativo | 1000 | 40.00% | 15 registros |
+| --- | --- | --- | --- |
+| Gorro Trucker | 100 | 60.00% | 5 registros |
+| ... | ... | ... | ... |
+
+---
+
+## ¿Por qué esta lógica es superior para COMPINA?
+
+1. **Supera la inconsistencia del Proveedor:** Como bien mencionas, el proveedor puede cambiar, pero el **costo de mercado** para un "Gorro Trucker" suele mantenerse en rangos similares. Al agrupar por nombre similar, obtienes el margen real que la agencia ha logrado aplicar históricamente a ese tipo de prenda.
+2. **Identifica Oportunidades:** Si ves que en "Gorro Publicitario 1000" el margen promedio es 30%, pero en una cotización vieja se logró un 40%, el equipo de ventas puede investigar qué proveedor o qué condiciones permitieron esa ganancia extra.
+3. **Escalabilidad:** Al usar los datos de "más cotizaciones anteriores", la muestra se vuelve más robusta. El sistema simplemente "traga" más Excels y refina los porcentajes automáticamente.
+
+### Regla de Oro para el Arquetipo:
+
+Para que la agrupación por "nombres similares" no sea un caos, la lógica debe tomar los **dos primeros términos** después de la palabra clave (ej: "Gorro" + "Trucker" + "Premium"). Esto evita que variaciones mínimas de texto creen productos duplicados en tu Excel de Benchmarking.
+
+
+
+
+

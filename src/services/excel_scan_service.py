@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import os
+import re
 import sys
+import threading
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 import pandas as pd
@@ -17,33 +19,42 @@ class ExcelScanService:
     def __init__(self, hojas_excluidas: Sequence[str]) -> None:
         self._hojas_excluidas = [h.lower() for h in hojas_excluidas]
 
-    def scan_folder(self, folder_path: str, variaciones: Sequence[str]) -> List[FileScanReport]:
+    def scan_folder(self, folder_path: str, search_pack: dict, stop_event: threading.Event) -> List[FileScanReport]:
         archivos = self._list_excel_files(folder_path)
         reports: List[FileScanReport] = []
-        variaciones_norm = [normalizar_texto(v) for v in variaciones]
+        if stop_event.is_set():
+            return reports
         for ruta in archivos:
-            reports.append(self.scan_file(ruta, variaciones_norm))
+            # Verificamos SIEMPRE al inicio de cada archivo si se pidió cancelar
+            if stop_event.is_set():
+                break
+            reports.append(self.scan_file(ruta, search_pack))
         return reports
 
-    def scan_file(self, file_path: str, variaciones_norm: Sequence[str]) -> FileScanReport:
+    def scan_file(self, file_path: str, search_pack: dict) -> FileScanReport:
         file_name = os.path.basename(file_path)
         report = FileScanReport(file_name=file_name)
         try:
+            # Tip: use_cols y engine ayudan a evitar algunos errores de memoria
             xls = pd.ExcelFile(file_path)
             best_df, best_sheet, col_map, max_matches = self._find_best_sheet(
-                file_path, xls.sheet_names, variaciones_norm
+                file_path, xls.sheet_names, search_pack
             )
+            
             if best_df is None or max_matches <= 0:
-                report.error_message = "No se detecto una tabla valida."
+                report.error_message = "No se detectó una tabla válida."
                 return report
 
             report.sheet_name = best_sheet
-            self._process_rows(best_df, col_map, variaciones_norm, report)
-            return report
-        except Exception as exc:
-            report.error_message = f"Error al leer archivo: {exc}"
+            self._process_rows(best_df, col_map, search_pack, report)
             return report
 
+        except PermissionError:
+            report.error_message = "Archivo abierto por otro programa. Ciérralo."
+        except Exception as exc:
+            report.error_message = f"Error: {str(exc)}"
+        return report
+    
     def _list_excel_files(self, folder_path: str) -> List[str]:
         if not folder_path or not os.path.isdir(folder_path):
             return []
@@ -59,7 +70,7 @@ class ExcelScanService:
         self,
         file_path: str,
         sheet_names: Sequence[str],
-        variaciones_norm: Sequence[str],
+        search_pack: dict,
     ) -> Tuple[Optional[pd.DataFrame], Optional[str], Dict[str, object], int]:
         best_df: Optional[pd.DataFrame] = None
         best_sheet: Optional[str] = None
@@ -69,6 +80,7 @@ class ExcelScanService:
         for sheet_name in sheet_names:
             if any(ex in sheet_name.lower() for ex in self._hojas_excluidas):
                 continue
+            
             df_check = pd.read_excel(file_path, sheet_name=sheet_name, header=None, nrows=25)
             header_row = self._detect_header_row(df_check)
             if header_row is None:
@@ -106,7 +118,7 @@ class ExcelScanService:
                     df_temp[c] = df_temp[c].ffill()
 
                 mask = df_temp.apply(
-                    lambda row: self._cumple_busqueda_tokenizada(row, variaciones_norm),
+                    lambda row: self._cumple_busqueda_tokenizada(row, search_pack),
                     axis=1,
                 )
                 matches = int(mask.sum())
@@ -132,23 +144,30 @@ class ExcelScanService:
                 return int(idx)
         return None
 
-    def _cumple_busqueda_tokenizada(self, fila: pd.Series, variaciones_norm: Sequence[str]) -> bool:
-        import re
+    def _cumple_busqueda_tokenizada(self, fila: pd.Series, search_pack: dict) -> bool:
+        
+        # Esta función evalúa si una fila cumple con los criterios de búsqueda definidos en search_pack.
+        # Se basa en la presencia de "tags" (palabras clave) y "exclude" (palabras prohibidas) en el contenido de la fila.
         from src.services.text_utils import normalizar_texto
 
-        # --- FIX: Si la lista está vacía, no hay filtro, devolvemos True para ver TODO ---
-        if not variaciones_norm:
-            return True
+        tags = search_pack.get("tags", [])
+        excludes = search_pack.get("exclude", [])
+        if not tags: return True
 
-        # Si hay variaciones, seguimos con la lógica estricta (el primer elemento es el keyword)
-        termino_buscado = variaciones_norm[0]
+        # Limpieza de ruido y normalización
+        tokens = [str(v).split("Presentación:")[0].strip() for v in fila.values if pd.notna(v)]
+        contenido_norm = normalizar_texto(" ".join(tokens))
         
-        tokens_fila = [str(val) for val in fila.values if pd.notna(val)]
-        contenido_fila = " ".join(tokens_fila)
-        contenido_norm = normalizar_texto(contenido_fila)
-
-        patron = rf'\b{re.escape(normalizar_texto(termino_buscado))}\b'
-        return bool(re.search(patron, contenido_norm))
+        # 1. EXCLUSIÓN (Si hay una prohibida, fuera)
+        for exc in excludes:
+            if re.search(rf'\b{re.escape(normalizar_texto(exc))}\b', contenido_norm):
+                return False
+            
+        # 2. INCLUSIÓN (Al menos un tag debe estar)
+        for tag in tags:
+            if re.search(rf'\b{re.escape(normalizar_texto(tag))}\b', contenido_norm):
+                return True
+        return False
     
     def _is_bolsos_search(self, variaciones_norm: Sequence[str]) -> bool:
         return any(
@@ -198,41 +217,51 @@ class ExcelScanService:
         self,
         df: pd.DataFrame,
         col_map: Dict[str, object],
-        variaciones_norm: Sequence[str],
+        search_pack: dict,
         report: FileScanReport,
     ) -> None:
         import re
-        from src.services.text_utils import normalizar_texto
+        from src.services.text_utils import (
+            normalizar_texto, 
+            limpiar_y_entero, 
+            limpiar_precio, 
+            recortar_detalle
+        )
+        from ..models.entities import ScanRow, PriceStats
 
         vistos = set()
         stats = PriceStats()
-        
-        # --- NUEVA LÓGICA DE FILTRADO ESTRICTO ---
-        termino_buscado = variaciones_norm[0] if variaciones_norm else ""
-        
-        # Intentamos detectar si existe una columna de "Detalle" o similar en el col_map
+        tags = search_pack.get("tags", [])
         col_detalle = col_map.get("detalle") 
 
         for idx, fila in df.iterrows():
-            # Primero validamos con el método de arriba
-            if not self._cumple_busqueda_tokenizada(fila, variaciones_norm):
+            # 1. VALIDACIÓN SEMÁNTICA (Inclusión y Exclusión global)
+            if not self._cumple_busqueda_tokenizada(fila, search_pack):
                 continue
             
-            # Validación extra: si tenemos la columna detalle, el término DEBE estar ahí
-            if col_detalle and col_detalle in fila:
+            # 2. FILTRADO ESTRICTO EN COLUMNA DETALLE
+            # Al menos uno de los sinónimos (tags) debe estar en el nombre del producto
+            # Solo aplica si hay términos de búsqueda especificados
+            if tags and col_detalle and col_detalle in fila:
                 texto_col = normalizar_texto(str(fila[col_detalle]))
-                if not re.search(rf'\b{re.escape(termino_buscado)}\b', texto_col):
+                match_detalle = any(
+                    re.search(rf'\b{re.escape(normalizar_texto(t))}\b', texto_col) 
+                    for t in tags
+                )
+                if not match_detalle:
                     continue
 
+            # 3. PROCESAMIENTO DE DATOS Y PRECIOS
             try:
+                # Extraer y validar cantidad
                 cantidad = limpiar_y_entero(fila[col_map["cant"]])
+                detalle_raw = str(fila[col_detalle]) if col_detalle else ""
+
                 if cantidad <= 0:
                     report.failed_rows.append(
                         ScanRow(
                             fila_id=int(idx),
-                            articulo=recortar_detalle(
-                                fila[col_map.get("detalle")] if col_map.get("detalle") else ""
-                            ),
+                            articulo=recortar_detalle(detalle_raw),
                             cantidad=cantidad,
                             precio_prov=0.0,
                             precio_cli=0.0,
@@ -242,6 +271,7 @@ class ExcelScanService:
                     )
                     continue
 
+                # Extraer Precio Proveedor (v1)
                 v1 = 0.0
                 for c in col_map["provs"]:
                     val = limpiar_precio(fila[c])
@@ -249,6 +279,7 @@ class ExcelScanService:
                         v1 = round(val, 2)
                         break
 
+                # Buscar Precio Cliente (v2)
                 v2 = self._buscar_precio_cliente(
                     fila,
                     col_map["finals"],
@@ -257,14 +288,13 @@ class ExcelScanService:
                     v1,
                 )
 
+                # Validar coherencia de precios
                 min_diff = 0.5 if v1 >= 5 else 0.1
                 if v1 <= 0 or v2 <= 0 or (v2 - v1) < min_diff:
                     report.failed_rows.append(
                         ScanRow(
                             fila_id=int(idx),
-                            articulo=recortar_detalle(
-                                fila[col_map.get("detalle")] if col_map.get("detalle") else ""
-                            ),
+                            articulo=recortar_detalle(detalle_raw),
                             cantidad=cantidad,
                             precio_prov=v1,
                             precio_cli=v2,
@@ -274,14 +304,13 @@ class ExcelScanService:
                     )
                     continue
 
+                # Detección de Duplicados (Huella única)
                 huella = (cantidad, round(v1, 2), round(v2, 2))
                 if huella in vistos:
                     report.failed_rows.append(
                         ScanRow(
                             fila_id=int(idx),
-                            articulo=recortar_detalle(
-                                fila[col_map.get("detalle")] if col_map.get("detalle") else ""
-                            ),
+                            articulo=recortar_detalle(detalle_raw),
                             cantidad=cantidad,
                             precio_prov=v1,
                             precio_cli=v2,
@@ -291,47 +320,41 @@ class ExcelScanService:
                     )
                     continue
 
-                margen = ((v2 - v1) / v1) * 100 if v1 else 0.0
-                if margen > 450:
+                # Calcular Margen y Validar Límites (Máximo 450%)
+                margen_val = ((v2 - v1) / v1) * 100 if v1 else 0.0
+                if margen_val > 450:
                     report.failed_rows.append(
                         ScanRow(
                             fila_id=int(idx),
-                            articulo=recortar_detalle(
-                                fila[col_map.get("detalle")] if col_map.get("detalle") else ""
-                            ),
+                            articulo=recortar_detalle(detalle_raw),
                             cantidad=cantidad,
                             precio_prov=v1,
                             precio_cli=v2,
-                            margen=margen,
+                            margen=round(margen_val, 2),
                             motivo="margen",
                         )
                     )
                     continue
 
+                # ÉXITO: Agregar fila válida
                 vistos.add(huella)
-                detalle_raw = (
-                    fila[col_map.get("detalle")] if col_map.get("detalle") else ""
-                )
-                detalle = recortar_detalle(detalle_raw)
-                margen = ((v2 - v1) / v1) * 100 if v1 else 0.0
                 report.matched_rows.append(
                     ScanRow(
                         fila_id=int(idx),
-                        articulo=detalle,
+                        articulo=recortar_detalle(detalle_raw),
                         cantidad=cantidad,
                         precio_prov=v1,
                         precio_cli=v2,
-                        margen=round(margen, 2),
+                        margen=round(margen_val, 2),
                     )
                 )
-                stats.add_margin(cantidad, margen)
+                stats.add_margin(cantidad, margen_val)
+
             except Exception:
                 report.failed_rows.append(
                     ScanRow(
                         fila_id=int(idx),
-                        articulo=recortar_detalle(
-                            fila[col_map.get("detalle")] if col_map.get("detalle") else ""
-                        ),
+                        articulo=recortar_detalle(fila[col_detalle] if col_detalle else ""),
                         cantidad=0,
                         precio_prov=0.0,
                         precio_cli=0.0,
@@ -340,4 +363,9 @@ class ExcelScanService:
                     )
                 )
 
+        # 4. ORDENAMIENTO FINAL Y ESTADÍSTICAS
+        # Ordenamos alfabéticamente por la columna 'articulo'
+        report.matched_rows.sort(
+            key=lambda row: (str(row.articulo).strip().lower() if row.articulo else "")
+        )
         report.stats = stats

@@ -23,7 +23,7 @@ cotizador/
 
 
 1ro Busca: Palabra clave en columna DETALLES 
-2do Obtener: Cant., "Costo uni. No IGV (S/.)", "COSTO S/.", luego almacenar en variables (cantidad, costo_proveedor y costo_final) respectivamente
+2do Obtener: Cant., "COSTO S/.", "Costo uni. No IGV (S/.)", luego almacenar en variables (cantidad, costo_proveedor y costo_final) respectivamente
 3ero Calcular: margen = (costo_final - costo_proveedor) / costo_proveedor
 4to Condicional: si la cantidad es mayor a 1000, entonces se almacena el margen en un acumulador llamado acumulador_1, 
 y una variable contador_1 debe sumar 1, caso contrario pasa al siguiente condicional donde si la cantidad es mayor a 500,
@@ -35,3 +35,10 @@ margen_1000 = acumulador_1 / contador_1
 margen_500 = acumulador_2 / contador_2
 margen_100 = acumulador_3 / contador_3
 5to Imprimir: margen_1000, margen_500 y margen_100
+
+
+
+
+precio_final_unitario = precio_proveedor_nuevo * (1 + (margen_promedio / 100))
+
+cli= 

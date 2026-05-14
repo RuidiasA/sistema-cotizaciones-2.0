@@ -68,3 +68,50 @@ class FileScanReport:
     failed_rows: List[ScanRow] = field(default_factory=list)
     stats: PriceStats = field(default_factory=PriceStats)
     error_message: Optional[str] = None
+
+
+@dataclass
+class ArchetypeData:
+    """Representa un arquetipo con métricas por tier de cantidad."""
+
+    nombre_arquetipo: str
+    categoria: str
+    margen_tier_100: float = 0.0
+    casos_tier_100: int = 0
+    margen_tier_500: float = 0.0
+    casos_tier_500: int = 0
+    margen_tier_1000: float = 0.0
+    casos_tier_1000: int = 0
+    actualizado_en: str = ""
+    confianza_general: float = 0.0
+
+
+@dataclass
+class BenchmarkingMatrix:
+    """Matriz completa de benchmarking por categoría."""
+
+    categoria: str
+    arquetipos: List[ArchetypeData] = field(default_factory=list)
+    fecha_generacion: str = ""
+    total_registros_procesados: int = 0
+
+    def get_arquetipo_por_nombre(self, nombre: str) -> Optional[ArchetypeData]:
+        nombre_norm = str(nombre or "").strip().lower()
+        if not nombre_norm:
+            return None
+
+        for arquetipo in self.arquetipos:
+            if arquetipo.nombre_arquetipo.strip().lower() == nombre_norm:
+                return arquetipo
+        return None
+
+    def get_margen_para_cantidad(self, nombre_arquetipo: str, cantidad: int) -> float:
+        arquetipo = self.get_arquetipo_por_nombre(nombre_arquetipo)
+        if arquetipo is None:
+            return 35.0
+
+        if cantidad >= 1000:
+            return arquetipo.margen_tier_1000 if arquetipo.casos_tier_1000 > 0 else 35.0
+        if cantidad >= 500:
+            return arquetipo.margen_tier_500 if arquetipo.casos_tier_500 > 0 else 35.0
+        return arquetipo.margen_tier_100 if arquetipo.casos_tier_100 > 0 else 35.0

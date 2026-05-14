@@ -2,12 +2,10 @@ gorro, visera,
 casaca, chaqueta, parka, abrigo, polera, chaleco,
 polo,
 
-
 toalla,
 almohada, 
 mandil,
 mochila, canguro, bolsa, chimpunera, morral
-
 
 cuaderno, libreta, block, hoja, agenda, cuadernillo
 cartuchera, neceser,
@@ -16,7 +14,6 @@ tarjeta,
 llavero,
 pines,
 trofeo, medalla, placa
-
 
 tomatodo,
 vaso, taza, cafetera, cuchara, batidor,
@@ -29,82 +26,6 @@ tablet (tents)
 
 PORTA NOMBRES  ACRÍLICO/MADERA 	(????)
 PORTA POST IT CALENDARIO 	
-
-
-# Accesorios para la cabeza
-headwear = {
-    "gorro": ["gorros", "chullos", "beanies"],
-    "visera": ["viseras", "parasoles de cabeza"]
-}
-
-# Prendas de vestir (Torso y Abrigo)
-apparel = {
-    "casaca": ["casacas", "chamarras", "cortavientos"],
-    "chaqueta": ["chaquetas", "blazers"],
-    "parka": ["parkas", "abrigos largos"],
-    "abrigo": ["abrigos", "sobretodos"],
-    "polera": ["poleras", "sudaderas", "hoodies"],
-    "chaleco": ["chalecos", "gilets"],
-    "polo": ["polos", "camisetas", "remeras"]
-}
-
-# Textiles y Hogar
-textiles = {
-    "toalla": ["toallas", "toallones"],
-    "almohada": ["almohadas", "cojines"],
-    "mandil": ["mandiles", "delantales"]
-}
-
-# Bolsos y Transporte
-bags = {
-    "mochila": ["mochilas", "morrales de espalda"],
-    "canguro": ["canguros", "riñoneras"],
-    "bolsa": ["bolsas", "totes", "bolsas ecológicas"],
-    "chimpunera": ["chimpuneras", "portacalzados"],
-    "morral": ["morrales", "bandoleras"]
-}
-
-# Papelería y Escritorio
-stationery = {
-    "cuaderno": ["cuadernos", "anillados"],
-    "libreta": ["libretas", "journals"],
-    "block": ["blocks", "blocs de notas"],
-    "hoja": ["hojas", "folios"],
-    "agenda": ["agendas", "planificadores"],
-    "cartuchera": ["cartucheras", "estuches"],
-    "neceser": ["neceseres", "bolsos de aseo"],
-    "lapicero": ["lapiceros", "bolígrafos", "plumas"],
-    "resaltador": ["resaltadores", "plumones flúor"]
-}
-
-# Merchandising Pequeño y Premiaciones
-accessories_awards = {
-    "tarjeta": ["tarjetas", "carnets"],
-    "llavero": ["llaveros", "pendientes"],
-    "pines": ["pines", "prendedores", "insignias"],
-    "trofeo": ["trofeos", "copas"],
-    "medalla": ["medallas", "preseas"],
-    "placa": ["placas", "reconocimientos"]
-}
-
-# Menaje y Oficina
-office_kitchen = {
-    "tomatodo": ["tomatodos", "botellas", "caramañolas"],
-    "vaso": ["vasos", "copas de vidrio"],
-    "taza": ["tazas", "mugs"],
-    "cafetera": ["cafeteras", "prensas francesas"],
-    "cuchara": ["cucharas", "cubiertos"],
-    "batidor": ["batidores", "mezcladores"],
-    "sticker": ["stickers", "calcomanías", "adhesivos"],
-    "caja": ["cajas", "empaques"],
-    "pad_mouse": ["mouse pads", "alfombrillas para mouse"]
-}
-
-# Eventos y Tecnología
-events_tech = {
-    "props": ["props", "accesorios para fotos", "marcos de selfie"],
-    "tablet_tents": ["tablet tents", "habladores", "carpas de mesa"]
-}
 
 
 
@@ -179,6 +100,33 @@ articulos_merchandising = [
 
 116 elementos encontrados
 
-Mantenimiento de elementwos duplicados (elementos con mismo nombre de articulo pero precios diferentes)
 
 
+📄 Analizando: ProcesoProyecto_TASA_100_Polos_Camiseros,250_Blocks_F.xlsx
+Posible error:
+Demasiada informacion en los detalles y observaciones (confusion de datos numeros de telefono, costos, cantidades, tallas)
+
+📄 Analizando: ProcesoProyecto_TASA_500 y 500_Stickers_Adhesivos_Final.xlsx
+Posible error:
+Elementos con nombres duplicados (elementos con mismo nombre de articulo pero precios diferentes)
+
+
+
+
+gorro drill
+rompecabezas
+PORTA TACO
+PARLANTE
+banner
+placa
+
+
+error de margen promedio al no encontrar palabras claves
+>1000 y >500, parece estar obteniendo el mismo valor que
+el margen promedio que si se calcula correctamente
+
+entities
+app_controller
+quote_service
+
+al ingresar una kw siempre me devuelve bolsas
