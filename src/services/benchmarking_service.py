@@ -111,25 +111,48 @@ class BenchmarkingService:
             t500 = tiers.get("500", {"margen": 0.0, "costo": 0.0, "precio": 0.0, "casos": 0})
             t1000 = tiers.get("1000", {"margen": 0.0, "costo": 0.0, "precio": 0.0, "casos": 0})
 
-            margen_100 = float(t100["margen"]) if int(t100["casos"]) > 0 else 35.0
-            margen_500 = float(t500["margen"]) if int(t500["casos"]) > 0 else 35.0
-            margen_1000 = float(t1000["margen"]) if int(t1000["casos"]) > 0 else 35.0
+            c100 = int(t100["casos"])
+            c500 = int(t500["casos"])
+            c1000 = int(t1000["casos"])
 
-            casos_totales = int(t100["casos"] + t500["casos"] + t1000["casos"])
+            margen_100 = float(t100["margen"]) if c100 > 0 else 35.0
+            margen_1000 = float(t1000["margen"]) if c1000 > 0 else 35.0
+
+            if c500 > 0:
+                margen_500 = float(t500["margen"])
+            elif c100 == 0 and c1000 == 0:
+                margen_500 = 35.0
+            elif c100 == 0:
+                margen_500 = margen_1000
+            elif c1000 == 0:
+                margen_500 = margen_100
+            else:
+                ancla = max(35.0, margen_1000)
+                piso_virtual = float(self._umbral_confianza)
+                margen_500 = (
+                    (margen_100 * c100) + (margen_1000 * c1000) + (ancla * piso_virtual)
+                ) / (c100 + c1000 + piso_virtual)
+
+            if c1000 > 0:
+                margen_500 = max(margen_500, margen_1000)
+            if c100 > 0:
+                margen_500 = min(margen_500, margen_100)
+
+            casos_totales = int(c100 + c500 + c1000)
             arquetipos.append(
                 ArchetypeData(
                     nombre_arquetipo=nombre,
                     categoria=categoria,
                     margen_tier_100=round(margen_100, 2),
-                    casos_tier_100=int(t100["casos"]),
+                    casos_tier_100=c100,
                     costo_avg_100=float(t100["costo"]),
                     precio_avg_100=float(t100["precio"]),
                     margen_tier_500=round(margen_500, 2),
-                    casos_tier_500=int(t500["casos"]),
+                    casos_tier_500=c500,
                     costo_avg_500=float(t500["costo"]),
                     precio_avg_500=float(t500["precio"]),
                     margen_tier_1000=round(margen_1000, 2),
-                    casos_tier_1000=int(t1000["casos"]),
+                    casos_tier_1000=c1000,
                     costo_avg_1000=float(t1000["costo"]),
                     precio_avg_1000=float(t1000["precio"]),
                     actualizado_en=fecha,
