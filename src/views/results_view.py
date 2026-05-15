@@ -9,13 +9,13 @@ class ResultsView(ctk.CTkFrame):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1) # Ajustamos pesos para dar más espacio a la tabla
 
-        # 1. KPI CARDS (Sin cambios, ya funcionan bien)
+        # 1. KPI CARDS (Mostrar resultados de calculadora rápida)
         self._kpi_frame = ctk.CTkFrame(self, fg_color="transparent")
         self._kpi_frame.grid(row=0, column=0, sticky="ew", pady=(0, 20))
         
-        self._card_1000 = self._create_kpi_card(self._kpi_frame, "Margen 1000", 0)
-        self._card_500 = self._create_kpi_card(self._kpi_frame, "Margen 500", 1)
-        self._card_rest = self._create_kpi_card(self._kpi_frame, "Margen Resto", 2)
+        self._card_margen = self._create_kpi_card(self._kpi_frame, "Margen", 0, "0.00%")
+        self._card_precio_unit = self._create_kpi_card(self._kpi_frame, "Precio Unitario", 1, "S/. 0.00")
+        self._card_total = self._create_kpi_card(self._kpi_frame, "Precio Total", 2, "S/. 0.00")
 
         # 2. CONTENEDOR DE TABLA (Para manejar scrollbars mejor)
         self._table_container = ctk.CTkFrame(self, fg_color="#ffffff", corner_radius=12, border_width=1, border_color="#bdc3c7")
@@ -70,13 +70,13 @@ class ResultsView(ctk.CTkFrame):
         self._log = ctk.CTkTextbox(self, height=100, fg_color="#ffffff", border_color="#bdc3c7", border_width=1, font=("Consolas", 11))
         self._log.grid(row=2, column=0, sticky="ew", pady=(20, 0))
 
-    def _create_kpi_card(self, master, title, col):
+    def _create_kpi_card(self, master, title, col, format_text="0.00%"):
         card = ctk.CTkFrame(master, fg_color="#ffffff", corner_radius=12, border_width=1, border_color="#bdc3c7")
         card.grid(row=0, column=col, padx=10, sticky="nsew")
         master.grid_columnconfigure(col, weight=1)
         
         ctk.CTkLabel(card, text=title, text_color="#7f8c8d", font=ctk.CTkFont(size=12, weight="bold")).pack(pady=(15, 0))
-        val = ctk.CTkLabel(card, text="0.00%", text_color="#e67e22", font=ctk.CTkFont(size=26, weight="bold"))
+        val = ctk.CTkLabel(card, text=format_text, text_color="#e67e22", font=ctk.CTkFont(size=26, weight="bold"))
         val.pack(pady=(0, 15))
         return val
 
@@ -113,9 +113,9 @@ class ResultsView(ctk.CTkFrame):
         self._log.delete("1.0", "end")
         for item in self._table.get_children():
             self._table.delete(item)
-        self._card_1000.configure(text="0.00%")
-        self._card_500.configure(text="0.00%")
-        self._card_rest.configure(text="0.00%")
+        self._card_margen.configure(text="0.00%")
+        self._card_precio_unit.configure(text="S/. 0.00")
+        self._card_total.configure(text="S/. 0.00")
 
     def append_log(self, text: str) -> None:
         self._log.insert("end", f" {text}\n")
@@ -137,8 +137,14 @@ class ResultsView(ctk.CTkFrame):
             import re
             matches = re.findall(r"(\d+\.\d+)%", text)
             if len(matches) >= 3:
-                self._card_1000.configure(text=f"{matches[0]}%")
-                self._card_500.configure(text=f"{matches[1]}%")
-                self._card_rest.configure(text=f"{matches[2]}%")
+                self._card_margen.configure(text=f"{matches[0]}%")
+                self._card_precio_unit.configure(text=f"{matches[1]}%")
+                self._card_total.configure(text=f"{matches[2]}%")
         except Exception:
             pass
+
+    def update_quote_cards(self, margen: float, precio_unit: float, total: float) -> None:
+        """Actualiza las 3 tarjetas con los resultados de la calculadora rápida."""
+        self._card_margen.configure(text=f"{margen:.2f}%")
+        self._card_precio_unit.configure(text=f"S/. {precio_unit:.2f}")
+        self._card_total.configure(text=f"S/. {total:.2f}")

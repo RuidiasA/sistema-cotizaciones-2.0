@@ -138,10 +138,63 @@ class AppController:
         self._view.add_rows(report.matched_rows)
 
     def handle_quote(self, product_name: str, cantidad: int, precio_prov: float) -> None:
-        known = self._variation_service.is_known_product(product_name)
-        stats = self._stats if self._matched_total > 0 else PriceStats()
-        result = self._quote_service.create_quote(product_name, cantidad, precio_prov, stats)
-        self._view.show_quote_result(result, known)
+        """
+        Calculadora rápida: Vincula el input del usuario con los márgenes 
+        inteligentes calculados en el benchmarking.
+        """
+        # 1. Normalización: Convertimos el nombre del input a un arquetipo (ej: "Mochilas" -> "MOCHILA")
+        arquetipo_buscado = self._benchmarking_service.extraer_arquetipo(product_name)
+        
+        # 2. Definimos el margen inicial (base de seguridad)
+        margen_final = 35.0 
+        encontrado_en_benchmarking = False
+
+        # 3. Búsqueda de coincidencia en la matriz de benchmarking actual
+        if self._current_benchmarking and arquetipo_buscado:
+            for item in self._current_benchmarking.arquetipos:
+                if item.nombre_arquetipo == arquetipo_buscado:
+                    # Seleccionamos el margen inferido/real según el tier de cantidad
+                    if cantidad >= 1000:
+                        margen_final = item.margen_tier_1000
+                    elif cantidad >= 500:
+                        margen_final = item.margen_tier_500
+                    else:
+                        margen_final = item.margen_tier_100
+                    
+                    encontrado_en_benchmarking = True
+                    break
+
+        # 4. Preparación de estadísticas y ejecución de la cotización
+        # Si se encontró en benchmarking, usamos directamente ese margen (prioritario)
+        if encontrado_en_benchmarking:
+            precio_unit = round(precio_prov * (1 + (margen_final / 100)), 2)
+            total = round(precio_unit * cantidad, 2)
+            result = {"margen": margen_final, "precio_unit": precio_unit, "total": total}
+        else:
+            stats = self._stats if self._matched_total > 0 else PriceStats()
+            # Pasamos el margen_final obtenido del benchmarking como 'margen_defecto'
+            result = self._quote_service.create_quote(
+                product_name,
+                cantidad,
+                precio_prov,
+                stats,
+                margen_defecto=margen_final,
+            )
+
+        # 5. Feedback visual: Si se encontró en benchmarking, lo marcamos como conocido
+        known = encontrado_en_benchmarking or self._variation_service.is_known_product(product_name)
+
+        # UI updates must run on the main thread
+        if encontrado_en_benchmarking:
+            self._view.after(0, lambda: self._view.append_log(f"💡 Calculando '{product_name}' con margen de benchmarking: {margen_final}%"))
+
+        # Mostrar resultado en la UI desde el hilo principal y actualizar tarjetas
+        self._view.after(0, lambda: self._view.show_quote_result(result, known))
+        self._view.after(0, lambda: self._view.update_quote_cards(
+            result["margen"], 
+            result["precio_unit"], 
+            result["total"]
+        ))
 
     def handle_benchmarking(self, categoria: str) -> None:
         if not self._last_scan_rows:

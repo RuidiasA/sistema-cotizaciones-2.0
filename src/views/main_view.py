@@ -44,7 +44,7 @@ class MainView(ctk.CTk):
         self._controls.pack(fill="x", padx=15)
 
         # Calculadora Rápida
-        self._quote = QuoteView(self._sidebar, on_quote)
+        self._quote = QuoteView(self._sidebar, on_quote, on_clear=self.clear_quote_cards)
         self._quote.pack(fill="x", padx=15, pady=10)
 
         # --- ÁREA DE CONTENIDO (Resultados) ---
@@ -64,8 +64,14 @@ class MainView(ctk.CTk):
         
     def set_status(self, text): self._controls.set_status(text)
     def clear_results(self): self._results.clear()
+    def clear_quote_cards(self): 
+        self._results._card_margen.configure(text="0.00%")
+        self._results._card_precio_unit.configure(text="S/. 0.00")
+        self._results._card_total.configure(text="S/. 0.00")
     def append_log(self, text): self._results.append_log(text)
     def add_rows(self, rows): self._results.add_rows(rows)
     def set_stats_text(self, text): self._results.set_stats_text(text)
     def show_quote_result(self, res, known): self._quote.show_result(res, known)
+    def update_quote_cards(self, margen: float, precio_unit: float, total: float): 
+        self._results.update_quote_cards(margen, precio_unit, total)
     
