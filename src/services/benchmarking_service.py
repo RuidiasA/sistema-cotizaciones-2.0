@@ -18,6 +18,9 @@ from .text_utils import (
 class BenchmarkingService:
     """Genera matrices de benchmarking por arquetipo de producto."""
 
+    MARGEN_BASE = 35.0
+    PESO_VIRTUAL = 3
+
     def __init__(self, umbral_confianza: int = 3) -> None:
         # Estado inmutable para mantener operaciones thread-safe.
         self._umbral_confianza = max(1, int(umbral_confianza))
@@ -115,28 +118,18 @@ class BenchmarkingService:
             c500 = int(t500["casos"])
             c1000 = int(t1000["casos"])
 
-            margen_100 = float(t100["margen"]) if c100 > 0 else 35.0
-            margen_1000 = float(t1000["margen"]) if c1000 > 0 else 35.0
+            margen_100_obs = float(t100["margen"]) if c100 > 0 else None
+            margen_500_obs = float(t500["margen"]) if c500 > 0 else None
+            margen_1000_obs = float(t1000["margen"]) if c1000 > 0 else None
 
-            if c500 > 0:
-                margen_500 = float(t500["margen"])
-            elif c100 == 0 and c1000 == 0:
-                margen_500 = 35.0
-            elif c100 == 0:
-                margen_500 = margen_1000
-            elif c1000 == 0:
-                margen_500 = margen_100
-            else:
-                ancla = max(35.0, margen_1000)
-                piso_virtual = float(self._umbral_confianza)
-                margen_500 = (
-                    (margen_100 * c100) + (margen_1000 * c1000) + (ancla * piso_virtual)
-                ) / (c100 + c1000 + piso_virtual)
-
-            if c1000 > 0:
-                margen_500 = max(margen_500, margen_1000)
-            if c100 > 0:
-                margen_500 = min(margen_500, margen_100)
+            margen_100, margen_500, margen_1000, c100, c500, c1000 = self._inferir_margenes(
+                margen_100_obs,
+                margen_500_obs,
+                margen_1000_obs,
+                c100,
+                c500,
+                c1000,
+            )
 
             casos_totales = int(c100 + c500 + c1000)
             arquetipos.append(
@@ -165,6 +158,78 @@ class BenchmarkingService:
             arquetipos=arquetipos,
             fecha_generacion=fecha,
             total_registros_procesados=len(records),
+        )
+
+    def _weighted_avg(self, valor_a: float, peso_a: int, valor_b: float, peso_b: int) -> float:
+        total_peso = max(1, peso_a + peso_b)
+        return round(((valor_a * peso_a) + (valor_b * peso_b)) / total_peso, 2)
+
+    def _inferir_margenes(
+        self,
+        margen_100_obs: Optional[float],
+        margen_500_obs: Optional[float],
+        margen_1000_obs: Optional[float],
+        c100: int,
+        c500: int,
+        c1000: int,
+    ) -> tuple[float, float, float, int, int, int]:
+        margen_100 = margen_100_obs
+        margen_500 = margen_500_obs
+        margen_1000 = margen_1000_obs
+
+        if margen_100 is None and margen_1000 is None and margen_500 is None:
+            margen_100 = self.MARGEN_BASE
+            margen_500 = self.MARGEN_BASE
+            margen_1000 = self.MARGEN_BASE
+            c100 = c500 = c1000 = 0
+
+        # Caso: solo existe M100
+        if margen_100 is not None and margen_1000 is None:
+            margen_1000 = self._weighted_avg(margen_100, 1, self.MARGEN_BASE, self.PESO_VIRTUAL)
+            margen_500 = self._weighted_avg(margen_1000, 1, margen_100, 1)
+            c1000 = 0
+            if margen_500_obs is None:
+                c500 = 0
+
+        # Caso: solo existe M1000
+        if margen_1000 is not None and margen_100 is None:
+            if margen_1000 > self.MARGEN_BASE:
+                margen_100 = margen_1000
+                margen_500 = margen_1000
+            else:
+                margen_100 = self._weighted_avg(margen_1000, 1, self.MARGEN_BASE, self.PESO_VIRTUAL)
+                margen_500 = self._weighted_avg(margen_100, 1, margen_1000, 1)
+            c100 = 0
+            if margen_500_obs is None:
+                c500 = 0
+
+        if margen_100 is None:
+            margen_100 = self.MARGEN_BASE
+            c100 = 0
+        if margen_1000 is None:
+            margen_1000 = self.MARGEN_BASE
+            c1000 = 0
+        if margen_500 is None:
+            margen_500 = self._weighted_avg(margen_100, 1, margen_1000, 1)
+            c500 = 0
+
+        # Clamping final de monotonia: M100 >= M500 >= M1000
+        if margen_500 > margen_100:
+            margen_500 = margen_100
+        if margen_500 < margen_1000:
+            margen_500 = margen_1000
+        if margen_100 < margen_500:
+            margen_100 = margen_500
+        if margen_1000 > margen_500:
+            margen_1000 = margen_500
+
+        return (
+            round(margen_100, 2),
+            round(margen_500, 2),
+            round(margen_1000, 2),
+            c100,
+            c500,
+            c1000,
         )
 
     def calcular_confianza(self, casos_totales: int) -> float:
