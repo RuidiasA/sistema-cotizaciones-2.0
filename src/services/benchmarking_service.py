@@ -173,60 +173,60 @@ class BenchmarkingService:
         c500: int,
         c1000: int,
     ) -> tuple[float, float, float, int, int, int]:
-        margen_100 = margen_100_obs
-        margen_500 = margen_500_obs
-        margen_1000 = margen_1000_obs
+        """
+        Calcula los márgenes faltantes asegurando que la data real sea el ancla
+        y se respete la economía de escala (Piso Dinámico).
+        """
+        # 1. Inicialización limpia
+        m100, m500, m1000 = margen_100_obs, margen_500_obs, margen_1000_obs
 
-        if margen_100 is None and margen_1000 is None and margen_500 is None:
-            margen_100 = self.MARGEN_BASE
-            margen_500 = self.MARGEN_BASE
-            margen_1000 = self.MARGEN_BASE
-            c100 = c500 = c1000 = 0
+        # 2. ESCENARIOS DE INFERENCIA (Solo uno debe ejecutarse)
+        
+        # CASO A: No hay absolutamente nada de data -> Todo al base
+        if m100 is None and m500 is None and m1000 is None:
+            m100 = m500 = m1000 = self.MARGEN_BASE
 
-        # Caso: solo existe M100
-        if margen_100 is not None and margen_1000 is None:
-            margen_1000 = self._weighted_avg(margen_100, 1, self.MARGEN_BASE, self.PESO_VIRTUAL)
-            margen_500 = self._weighted_avg(margen_1000, 1, margen_100, 1)
-            c1000 = 0
-            if margen_500_obs is None:
-                c500 = 0
+        # CASO B: Solo existe M100 (El más común: pedidos pequeños)
+        elif m100 is not None and m500 is None and m1000 is None:
+            m1000 = self._weighted_avg(m100, c100, self.MARGEN_BASE, self.PESO_VIRTUAL)
+            m500 = self._weighted_avg(m100, c100, m1000, c1000)
 
-        # Caso: solo existe M1000
-        if margen_1000 is not None and margen_100 is None:
-            if margen_1000 > self.MARGEN_BASE:
-                margen_100 = margen_1000
-                margen_500 = margen_1000
-            else:
-                margen_100 = self._weighted_avg(margen_1000, 1, self.MARGEN_BASE, self.PESO_VIRTUAL)
-                margen_500 = self._weighted_avg(margen_100, 1, margen_1000, 1)
-            c100 = 0
-            if margen_500_obs is None:
-                c500 = 0
+        # CASO C: Solo existe M1000 (Piso Dinámico Activado)
+        elif m1000 is not None and m100 is None and m500 is None:
+            piso = max(self.MARGEN_BASE, m1000)
+            m100 = m500 = piso
 
-        if margen_100 is None:
-            margen_100 = self.MARGEN_BASE
-            c100 = 0
-        if margen_1000 is None:
-            margen_1000 = self.MARGEN_BASE
-            c1000 = 0
-        if margen_500 is None:
-            margen_500 = self._weighted_avg(margen_100, 1, margen_1000, 1)
-            c500 = 0
+        # CASO D: Solo existe M500 (El centro es el ancla)
+        elif m500 is not None and m100 is None and m1000 is None:
+            m100 = max(self.MARGEN_BASE, m500)
+            m1000 = self._weighted_avg(m500, c500, self.MARGEN_BASE, self.PESO_VIRTUAL)
 
-        # Clamping final de monotonia: M100 >= M500 >= M1000
-        if margen_500 > margen_100:
-            margen_500 = margen_100
-        if margen_500 < margen_1000:
-            margen_500 = margen_1000
-        if margen_100 < margen_500:
-            margen_100 = margen_500
-        if margen_1000 > margen_500:
-            margen_1000 = margen_500
+        # CASO E: Existen extremos (100 y 1000) pero falta el medio
+        elif m100 is not None and m1000 is not None and m500 is None:
+            m500 = self._weighted_avg(m100, c100, m1000, c1000)
+        
+        # CASO F: Cualquier otro hueco (relleno de seguridad)
+        m100 = m100 if m100 is not None else self.MARGEN_BASE
+        m1000 = m1000 if m1000 is not None else self.MARGEN_BASE
+        m500 = m500 if m500 is not None else self._weighted_avg(m100, c100, m1000, c1000)
+
+        # 3. RESTRICCIÓN DE MONOTONÍA (Protección de la Curva)
+        # IMPORTANTE: El orden de estas líneas es crítico para no destruir data real
+        # La regla es: 100 >= 500 >= 1000
+        
+        if m500 < m1000: 
+            m500 = m1000  # 500 no puede ser más barato que 1000
+        if m500 > m100: 
+            m500 = m100   # 500 no puede ser más caro que 100
+        if m100 < m500: 
+            m100 = m500   # 100 no puede ser más barato que 500
+        if m1000 > m500: 
+            m1000 = m500  # 1000 no puede ser más caro que 500
 
         return (
-            round(margen_100, 2),
-            round(margen_500, 2),
-            round(margen_1000, 2),
+            round(m100, 2),
+            round(m500, 2),
+            round(m1000, 2),
             c100,
             c500,
             c1000,

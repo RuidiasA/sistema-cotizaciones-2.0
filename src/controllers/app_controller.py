@@ -196,7 +196,7 @@ class AppController:
                     "Cantidad": 100,
                     "COSTO PROV.": round(float(item.costo_avg_100), 2),
                     "PRECIO CLI.": round(float(item.precio_avg_100), 2),
-                    "Margen Promedio": round(float(item.margen_tier_100) if item.casos_tier_100 > 0 else 35.0, 2),
+                    "Margen Promedio": round(float(item.margen_tier_100), 2),
                     "Muestra (Casos)": item.casos_tier_100,
                 }
             )
@@ -206,7 +206,7 @@ class AppController:
                     "Cantidad": 500,
                     "COSTO PROV.": round(float(item.costo_avg_500), 2),
                     "PRECIO CLI.": round(float(item.precio_avg_500), 2),
-                    "Margen Promedio": round(float(item.margen_tier_500) if item.casos_tier_500 > 0 else 35.0, 2),
+                    "Margen Promedio": round(float(item.margen_tier_500), 2),
                     "Muestra (Casos)": item.casos_tier_500,
                 }
             )
@@ -216,7 +216,7 @@ class AppController:
                     "Cantidad": 1000,
                     "COSTO PROV.": round(float(item.costo_avg_1000), 2),
                     "PRECIO CLI.": round(float(item.precio_avg_1000), 2),
-                    "Margen Promedio": round(float(item.margen_tier_1000) if item.casos_tier_1000 > 0 else 35.0, 2),
+                    "Margen Promedio": round(float(item.margen_tier_1000), 2),
                     "Muestra (Casos)": item.casos_tier_1000,
                 }
             )
@@ -249,9 +249,9 @@ class AppController:
     def _benchmarking_rows_from_matrix(self, matrix: BenchmarkingMatrix) -> List[ScanRow]:
         rows: List[ScanRow] = []
         for item in matrix.arquetipos:
-            margen_100 = round(float(item.margen_tier_100) if item.casos_tier_100 > 0 else 35.0, 2)
-            margen_500 = round(float(item.margen_tier_500) if item.casos_tier_500 > 0 else 35.0, 2)
-            margen_1000 = round(float(item.margen_tier_1000) if item.casos_tier_1000 > 0 else 35.0, 2)
+            margen_100 = round(float(item.margen_tier_100), 2)
+            margen_500 = round(float(item.margen_tier_500), 2)
+            margen_1000 = round(float(item.margen_tier_1000), 2)
             rows.append(
                 ScanRow(
                     fila_id=int(item.casos_tier_100),

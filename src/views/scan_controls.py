@@ -91,7 +91,7 @@ class ScanControls(ctk.CTkFrame):
         self._status_label = ctk.CTkLabel(self, text="● Sistema Listo", 
                                          font=ctk.CTkFont(size=16, slant="italic"),
                                          text_color="#27ae60")
-        self._status_label.pack(side="bottom", pady=20)
+        self._status_label.pack(side="bottom", pady=5)
 
     def set_scanning_state(self, is_scanning: bool) -> None:
         """Modifica la disponibilidad de botones para escaneo/benchmarking."""
