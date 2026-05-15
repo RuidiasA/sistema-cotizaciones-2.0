@@ -16,6 +16,8 @@ from .text_utils import limpiar_precio, limpiar_y_entero, normalizar_texto, reco
 
 
 class ExcelScanService:
+    KEYWORDS_DESCARTAR = ["SERVICIO", "DELIVERY", "SUBTOTAL", "SUB TOTAL", "TOTAL", "IGV", "1RA"]
+    
     def __init__(self, hojas_excluidas: Sequence[str]) -> None:
         self._hojas_excluidas = [h.lower() for h in hojas_excluidas]
 
@@ -152,17 +154,19 @@ class ExcelScanService:
 
         tags = search_pack.get("tags", [])
         excludes = search_pack.get("exclude", [])
-        if not tags: return True
-
+        
+        all_excludes = list(set(excludes + self.KEYWORDS_DESCARTAR))
+        
         # Limpieza de ruido y normalización
         tokens = [str(v).split("Presentación:")[0].strip() for v in fila.values if pd.notna(v)]
         contenido_norm = normalizar_texto(" ".join(tokens))
         
         # 1. EXCLUSIÓN (Si hay una prohibida, fuera)
-        for exc in excludes:
+        for exc in all_excludes:
             if re.search(rf'\b{re.escape(normalizar_texto(exc))}\b', contenido_norm):
                 return False
             
+        if not tags: return True
         # 2. INCLUSIÓN (Al menos un tag debe estar)
         for tag in tags:
             if re.search(rf'\b{re.escape(normalizar_texto(tag))}\b', contenido_norm):
