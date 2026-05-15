@@ -166,7 +166,10 @@ class AppController:
 
         def update_ui() -> None:
             self._current_benchmarking = matrix
+            benchmarking_rows = self._benchmarking_rows_from_matrix(matrix)
             total_arquetipos = len(matrix.arquetipos)
+            self._view.clear_results()
+            self._view.add_rows(benchmarking_rows)
             self._view.append_log(f"📊 Benchmarking generado: {total_arquetipos} arquetipos")
             self._view.set_status("Benchmarking Listo")
             self._view.set_benchmarking_state(False)
@@ -187,24 +190,30 @@ class AppController:
             rows.append(
                 {
                     "Producto (Arquetipo)": item.nombre_arquetipo,
-                    "Tier": "100",
-                    "Margen Promedio": item.margen_tier_100,
+                    "Cantidad": 100,
+                    "COSTO PROV.": round(float(item.costo_avg_100), 2),
+                    "PRECIO CLI.": round(float(item.precio_avg_100), 2),
+                    "Margen Promedio": round(float(item.margen_tier_100) if item.casos_tier_100 > 0 else 35.0, 2),
                     "Muestra (Casos)": item.casos_tier_100,
                 }
             )
             rows.append(
                 {
                     "Producto (Arquetipo)": item.nombre_arquetipo,
-                    "Tier": "500",
-                    "Margen Promedio": item.margen_tier_500,
+                    "Cantidad": 500,
+                    "COSTO PROV.": round(float(item.costo_avg_500), 2),
+                    "PRECIO CLI.": round(float(item.precio_avg_500), 2),
+                    "Margen Promedio": round(float(item.margen_tier_500) if item.casos_tier_500 > 0 else 35.0, 2),
                     "Muestra (Casos)": item.casos_tier_500,
                 }
             )
             rows.append(
                 {
                     "Producto (Arquetipo)": item.nombre_arquetipo,
-                    "Tier": "1000",
-                    "Margen Promedio": item.margen_tier_1000,
+                    "Cantidad": 1000,
+                    "COSTO PROV.": round(float(item.costo_avg_1000), 2),
+                    "PRECIO CLI.": round(float(item.precio_avg_1000), 2),
+                    "Margen Promedio": round(float(item.margen_tier_1000) if item.casos_tier_1000 > 0 else 35.0, 2),
                     "Muestra (Casos)": item.casos_tier_1000,
                 }
             )
@@ -213,7 +222,9 @@ class AppController:
             rows,
             columns=[
                 "Producto (Arquetipo)",
-                "Tier",
+                "Cantidad",
+                "COSTO PROV.",
+                "PRECIO CLI.",
                 "Margen Promedio",
                 "Muestra (Casos)",
             ],
@@ -231,3 +242,41 @@ class AppController:
 
         self._view.after(0, lambda: self._view.set_status("Benchmarking Exportado"))
         self._view.after(0, lambda: self._view.append_log(f"🗂️ Archivo: {output_file}"))
+
+    def _benchmarking_rows_from_matrix(self, matrix: BenchmarkingMatrix) -> List[ScanRow]:
+        rows: List[ScanRow] = []
+        for item in matrix.arquetipos:
+            margen_100 = round(float(item.margen_tier_100) if item.casos_tier_100 > 0 else 35.0, 2)
+            margen_500 = round(float(item.margen_tier_500) if item.casos_tier_500 > 0 else 35.0, 2)
+            margen_1000 = round(float(item.margen_tier_1000) if item.casos_tier_1000 > 0 else 35.0, 2)
+            rows.append(
+                ScanRow(
+                    fila_id=int(item.casos_tier_100),
+                    articulo=item.nombre_arquetipo,
+                    cantidad=100,
+                    precio_prov=round(float(item.costo_avg_100), 2),
+                    precio_cli=round(float(item.precio_avg_100), 2),
+                    margen=margen_100,
+                )
+            )
+            rows.append(
+                ScanRow(
+                    fila_id=int(item.casos_tier_500),
+                    articulo=item.nombre_arquetipo,
+                    cantidad=500,
+                    precio_prov=round(float(item.costo_avg_500), 2),
+                    precio_cli=round(float(item.precio_avg_500), 2),
+                    margen=margen_500,
+                )
+            )
+            rows.append(
+                ScanRow(
+                    fila_id=int(item.casos_tier_1000),
+                    articulo=item.nombre_arquetipo,
+                    cantidad=1000,
+                    precio_prov=round(float(item.costo_avg_1000), 2),
+                    precio_cli=round(float(item.precio_avg_1000), 2),
+                    margen=margen_1000,
+                )
+            )
+        return rows

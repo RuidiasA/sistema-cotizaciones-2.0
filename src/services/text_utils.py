@@ -72,9 +72,13 @@ _PALABRAS_SERVICIO = (
     "EMBALAJE",
     "ROTULADO",
     "FLETE",
+    
 )
 
 _RUIDO_ESPECIFICACION = (
+    "ADICIONAL",
+    "PAGO",
+    "TOTAL",
     "GRANDE",
     "PEQUENO",
     "PEQUENA",
@@ -86,6 +90,7 @@ _RUIDO_ESPECIFICACION = (
     "FABRICACION",
     "NACIONAL",
     "TALLA",
+    
 )
 
 

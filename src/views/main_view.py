@@ -20,7 +20,7 @@ class MainView(ctk.CTk):
         super().__init__()
         
         self.title("Gestión de Cotizaciones")
-        self.geometry("1400x900")
+        self.after(0, lambda: self.state("zoomed"))
         self.configure(fg_color="#cccccc")
 
         # Configuración de Grid: Columna 0 (Sidebar), Columna 1 (Contenido)
@@ -41,7 +41,7 @@ class MainView(ctk.CTk):
             on_scan,
             on_cancel,
         )
-        self._controls.pack(fill="x", padx=15, pady=10)
+        self._controls.pack(fill="x", padx=15)
 
         # Calculadora Rápida
         self._quote = QuoteView(self._sidebar, on_quote)

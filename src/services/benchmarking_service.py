@@ -68,6 +68,8 @@ class BenchmarkingService:
                 {
                     "arquetipo": arquetipo,
                     "tier": self._tier_para_cantidad(row.cantidad),
+                    "costo_prov": float(row.precio_prov),
+                    "precio_cli": float(row.precio_cli),
                     "margen": float(row.margen),
                 }
             )
@@ -83,7 +85,12 @@ class BenchmarkingService:
         df = pd.DataFrame(records)
         grouped = (
             df.groupby(["arquetipo", "tier"], as_index=False)
-            .agg(margen_promedio=("margen", "mean"), casos=("margen", "count"))
+            .agg(
+                margen_promedio=("margen", "mean"),
+                costo_promedio=("costo_prov", "mean"),
+                precio_promedio=("precio_cli", "mean"),
+                casos=("margen", "count"),
+            )
             .sort_values(["arquetipo", "tier"])
         )
 
@@ -93,26 +100,38 @@ class BenchmarkingService:
             tier = str(row.tier)
             bucket.setdefault(arquetipo, {})[tier] = {
                 "margen": round(float(row.margen_promedio), 2),
+                "costo": round(float(row.costo_promedio), 2),
+                "precio": round(float(row.precio_promedio), 2),
                 "casos": int(row.casos),
             }
 
         arquetipos: List[ArchetypeData] = []
         for nombre, tiers in sorted(bucket.items()):
-            t100 = tiers.get("100", {"margen": 0.0, "casos": 0})
-            t500 = tiers.get("500", {"margen": 0.0, "casos": 0})
-            t1000 = tiers.get("1000", {"margen": 0.0, "casos": 0})
+            t100 = tiers.get("100", {"margen": 0.0, "costo": 0.0, "precio": 0.0, "casos": 0})
+            t500 = tiers.get("500", {"margen": 0.0, "costo": 0.0, "precio": 0.0, "casos": 0})
+            t1000 = tiers.get("1000", {"margen": 0.0, "costo": 0.0, "precio": 0.0, "casos": 0})
+
+            margen_100 = float(t100["margen"]) if int(t100["casos"]) > 0 else 35.0
+            margen_500 = float(t500["margen"]) if int(t500["casos"]) > 0 else 35.0
+            margen_1000 = float(t1000["margen"]) if int(t1000["casos"]) > 0 else 35.0
 
             casos_totales = int(t100["casos"] + t500["casos"] + t1000["casos"])
             arquetipos.append(
                 ArchetypeData(
                     nombre_arquetipo=nombre,
                     categoria=categoria,
-                    margen_tier_100=float(t100["margen"]),
+                    margen_tier_100=round(margen_100, 2),
                     casos_tier_100=int(t100["casos"]),
-                    margen_tier_500=float(t500["margen"]),
+                    costo_avg_100=float(t100["costo"]),
+                    precio_avg_100=float(t100["precio"]),
+                    margen_tier_500=round(margen_500, 2),
                     casos_tier_500=int(t500["casos"]),
-                    margen_tier_1000=float(t1000["margen"]),
+                    costo_avg_500=float(t500["costo"]),
+                    precio_avg_500=float(t500["precio"]),
+                    margen_tier_1000=round(margen_1000, 2),
                     casos_tier_1000=int(t1000["casos"]),
+                    costo_avg_1000=float(t1000["costo"]),
+                    precio_avg_1000=float(t1000["precio"]),
                     actualizado_en=fecha,
                     confianza_general=self.calcular_confianza(casos_totales),
                 )

@@ -78,10 +78,16 @@ class ArchetypeData:
     categoria: str
     margen_tier_100: float = 0.0
     casos_tier_100: int = 0
+    costo_avg_100: float = 0.0
+    precio_avg_100: float = 0.0
     margen_tier_500: float = 0.0
     casos_tier_500: int = 0
+    costo_avg_500: float = 0.0
+    precio_avg_500: float = 0.0
     margen_tier_1000: float = 0.0
     casos_tier_1000: int = 0
+    costo_avg_1000: float = 0.0
+    precio_avg_1000: float = 0.0
     actualizado_en: str = ""
     confianza_general: float = 0.0
 

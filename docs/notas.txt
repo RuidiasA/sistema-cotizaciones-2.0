@@ -42,3 +42,11 @@ margen_100 = acumulador_3 / contador_3
 precio_final_unitario = precio_proveedor_nuevo * (1 + (margen_promedio / 100))
 
 cli= 
+
+
+"SERVICIO",
+    "DELIVERY",
+    "SUBTOTAL",
+    "IGV",
+    "SERVICIO",
+    "1RA",

@@ -29,8 +29,8 @@ class ResultsView(ctk.CTkFrame):
         self._table = ttk.Treeview(self._table_container, columns=columns, show="headings")
         
         # --- CONFIGURACIÓN DE COLUMNAS OPTIMIZADA ---
-        self._table.heading("fila", text="FILA")
-        self._table.column("fila", width=50, minwidth=50, stretch=False, anchor="center")
+        self._table.heading("fila", text="CASOS")
+        self._table.column("fila", width=60, minwidth=60, stretch=False, anchor="center")
 
         self._table.heading("articulo", text="ARTÍCULO / DETALLE")
         self._table.column("articulo", width=280, minwidth=200, stretch=True)
