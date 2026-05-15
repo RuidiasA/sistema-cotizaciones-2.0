@@ -22,7 +22,7 @@ class BenchmarkingService:
         # Estado inmutable para mantener operaciones thread-safe.
         self._umbral_confianza = max(1, int(umbral_confianza))
 
-    def extraer_arquetipo(self, fila_detalle: str) -> Optional[str]:
+    def extraer_arquetipo(self, fila_detalle: str, keyword: str = "") -> Optional[str]:
         if es_servicio_o_logistica(fila_detalle):
             return None
 
@@ -33,7 +33,7 @@ class BenchmarkingService:
 
         material = extraer_material(limpio)
         segmento = extraer_segmento_calidad(limpio)
-        base = self._extraer_producto_base(limpio, material, segmento)
+        base = self._extraer_producto_base(limpio, material, segmento, keyword)
 
         if not base:
             return None
@@ -49,7 +49,7 @@ class BenchmarkingService:
     def es_servicio_excluido(self, articulo: str) -> bool:
         return es_servicio_o_logistica(articulo)
 
-    def generar_benchmarking(self, scan_rows: List[ScanRow], categoria: str) -> BenchmarkingMatrix:
+    def generar_benchmarking(self, scan_rows: List[ScanRow], categoria: str, keyword: str = "") -> BenchmarkingMatrix:
         """Construye una matriz por arquetipos usando agregaciones de pandas."""
         fecha = datetime.now().isoformat(timespec="seconds")
 
@@ -60,7 +60,7 @@ class BenchmarkingService:
             if row.margen <= 0:
                 continue
 
-            arquetipo = self.extraer_arquetipo(row.articulo)
+            arquetipo = self.extraer_arquetipo(row.articulo, keyword)
             if not arquetipo:
                 continue
 
@@ -160,10 +160,29 @@ class BenchmarkingService:
         texto: str,
         material: Optional[str],
         segmento: Optional[str],
+        keyword: str = "",
     ) -> str:
         texto_norm = normalizar_texto(texto)
         if not texto_norm:
             return ""
+
+        def singularizar(token: str) -> str:
+            if token.endswith("ces") and len(token) > 3:
+                return token[:-3] + "z"
+            if token.endswith("es") and len(token) > 4:
+                return token[:-2]
+            if token.endswith("s") and len(token) > 3:
+                return token[:-1]
+            return token
+
+        # If keyword is provided, try to find it in the text.
+        if keyword:
+            keyword_norm = normalizar_texto(keyword)
+            tokens = texto_norm.split()
+            for token in tokens:
+                token_singular = singularizar(token)
+                if keyword_norm in token_singular or token_singular in keyword_norm:
+                    return token_singular.upper()
 
         tokens = texto_norm.split()
         descartes = {"de", "con", "para", "y", "en", "el", "la", "los", "las"}
@@ -174,5 +193,5 @@ class BenchmarkingService:
 
         for token in tokens:
             if token not in descartes:
-                return token.upper()
+                return singularizar(token).upper()
         return ""

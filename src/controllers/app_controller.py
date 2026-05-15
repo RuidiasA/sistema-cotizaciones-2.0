@@ -27,6 +27,7 @@ class AppController:
         self._matched_total = 0
         self._last_scan_rows: List[ScanRow] = []
         self._current_benchmarking: Optional[BenchmarkingMatrix] = None
+        self._last_keyword: str = ""
         self._stop_event = threading.Event()  
         self._executor = ThreadPoolExecutor(max_workers=1)
 
@@ -45,6 +46,7 @@ class AppController:
 
     def handle_scan(self, folder: str, categoria: str, keyword: str) -> None:
         self._stop_event.clear()
+        self._last_keyword = keyword.strip()
         self._view.set_scanning_state(True)
         self._view.enable_export(False)
         self._view.set_status("Procesando...")
@@ -153,6 +155,7 @@ class AppController:
             self._benchmarking_service.generar_benchmarking,
             list(self._last_scan_rows),
             categoria,
+            self._last_keyword,
         )
         future.add_done_callback(lambda f: self._on_benchmarking_done(f))
 

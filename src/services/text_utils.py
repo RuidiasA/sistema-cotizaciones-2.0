@@ -59,11 +59,19 @@ _MATERIALES_BASE = (
     "JERSEY",
     "LINO",
     "DRILL",
+    "IMPERMEABLE",
+    "ALGODON",
+    "POLIESTER",
+    "CATIONI",
+    "LONA LABRADA",
+    "LINO SERMAT",
+    "TETRON",
 )
 
 _SEGMENTOS_CALIDAD = (
     "PUBLICITARIO",
     "CORPORATIVO",
+    "CORPORATIVA",
 )
 
 _PALABRAS_SERVICIO = (
@@ -113,8 +121,13 @@ def extraer_segmento_calidad(texto: str) -> Optional[str]:
 
     for segmento in _SEGMENTOS_CALIDAD:
         segmento_norm = normalizar_texto(segmento)
-        if re.search(rf"\b{re.escape(segmento_norm)}\b", texto_norm):
+        if re.search(rf"\b{re.escape(segmento_norm)}s?\b", texto_norm):
             return segmento
+
+        if segmento_norm.endswith("a"):
+            plural_femenino = f"{segmento_norm[:-1]}as"
+            if re.search(rf"\b{re.escape(plural_femenino)}\b", texto_norm):
+                return segmento
     return None
 
 
