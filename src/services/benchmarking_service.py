@@ -89,10 +89,11 @@ class BenchmarkingService:
         grouped = (
             df.groupby(["arquetipo", "tier"], as_index=False)
             .agg(
-                margen_promedio=("margen", "mean"),
+                costo_total=("costo_prov", "sum"),
+                precio_total=("precio_cli", "sum"),
                 costo_promedio=("costo_prov", "mean"),
                 precio_promedio=("precio_cli", "mean"),
-                casos=("margen", "count"),
+                casos=("precio_cli", "count"),
             )
             .sort_values(["arquetipo", "tier"])
         )
@@ -101,8 +102,14 @@ class BenchmarkingService:
         for row in grouped.itertuples(index=False):
             arquetipo = str(row.arquetipo)
             tier = str(row.tier)
+            
+            c_total = float(row.costo_total)
+            p_total = float(row.precio_total)
+            
+            margen_consolidado = ((p_total - c_total) / c_total) * 100 if c_total > 0 else 0.0
+            
             bucket.setdefault(arquetipo, {})[tier] = {
-                "margen": round(float(row.margen_promedio), 2),
+                "margen": round(margen_consolidado, 2),
                 "costo": round(float(row.costo_promedio), 2),
                 "precio": round(float(row.precio_promedio), 2),
                 "casos": int(row.casos),
@@ -189,7 +196,7 @@ class BenchmarkingService:
         # CASO B: Solo existe M100 (El más común: pedidos pequeños)
         elif m100 is not None and m500 is None and m1000 is None:
             m1000 = self._weighted_avg(m100, c100, self.MARGEN_BASE, self.PESO_VIRTUAL)
-            m500 = self._weighted_avg(m100, c100, m1000, c1000)
+            m500 = self._weighted_avg(m100, c100, m1000, self.PESO_VIRTUAL)
 
         # CASO C: Solo existe M1000 (Piso Dinámico Activado)
         elif m1000 is not None and m100 is None and m500 is None:
@@ -210,18 +217,23 @@ class BenchmarkingService:
         m1000 = m1000 if m1000 is not None else self.MARGEN_BASE
         m500 = m500 if m500 is not None else self._weighted_avg(m100, c100, m1000, c1000)
 
-        # 3. RESTRICCIÓN DE MONOTONÍA (Protección de la Curva)
-        # IMPORTANTE: El orden de estas líneas es crítico para no destruir data real
-        # La regla es: 100 >= 500 >= 1000
-        
-        if m500 < m1000: 
-            m500 = m1000  # 500 no puede ser más barato que 1000
-        if m500 > m100: 
-            m500 = m100   # 500 no puede ser más caro que 100
-        if m100 < m500: 
-            m100 = m500   # 100 no puede ser más barato que 500
-        if m1000 > m500: 
-            m1000 = m500  # 1000 no puede ser más caro que 500
+        # 3. RESTRICCIÓN DE MONOTONÍA (Versión Segura sin Arrastre)
+        # Creamos copias para que ninguna reasignación altere la evaluación de la siguiente línea
+        m100_ant, m500_ant, m1000_ant = m100, m500, m1000
+
+        # 500 no puede ser más barato que 1000 ni más caro que 100
+        if m500_ant < m1000_ant: 
+            m500 = m1000_ant
+        if m500_ant > m100_ant:  
+            m500 = m100_ant
+
+        # 100 no puede ser más barato que 500
+        if m100_ant < m500:      
+            m100 = m500
+
+        # 1000 no puede ser más caro que 500
+        if m1000_ant > m500:     
+            m1000 = m500
 
         return (
             round(m100, 2),

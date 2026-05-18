@@ -55,9 +55,22 @@ class MainView(ctk.CTk):
     def set_scanning_state(self, is_scanning: bool): 
         """Propaga el estado a los controles para habilitar/deshabilitar botones"""
         self._controls.set_scanning_state(is_scanning)
+        # Al iniciar un escaneo, aseguramos alternancia por fila (group_size=1)
+        try:
+            if is_scanning:
+                self._results.set_group_size(1)
+        except Exception:
+            pass
 
     def set_benchmarking_state(self, is_benchmarking: bool):
         self._controls.set_benchmarking_state(is_benchmarking)
+        # Si se activa benchmarking, usar alternancia por 3 filas. No revertimos aquí
+        # para evitar que el controlador restablezca inmediatamente después de renderizar.
+        try:
+            if is_benchmarking:
+                self._results.set_group_size(3)
+        except Exception:
+            pass
 
     def enable_export(self, enabled: bool):
         self._controls.enable_export(enabled)

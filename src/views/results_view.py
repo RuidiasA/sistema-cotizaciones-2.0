@@ -66,6 +66,15 @@ class ResultsView(ctk.CTkFrame):
         self._table.grid(row=0, column=0, sticky="nsew", padx=(10, 0), pady=10)
         self._scrollbar.grid(row=0, column=1, sticky="ns", padx=(2, 5), pady=15)
 
+        # Configuración de tags para alternar fondo cada 3 filas
+        # 'group_white' = fondo blanco, 'group_gray' = fondo gris claro
+        self._table.tag_configure("group_white", background="#ffffff", foreground="#2c3e50")
+        # Gris un poco más visible
+        self._table.tag_configure("group_gray", background="#e9eef0", foreground="#2c3e50")
+
+        # Tamaño del grupo para alternancia. 1 = alternar por fila, 3 = alternar por cada 3 filas
+        self._group_size = 1
+
         # 3. CONSOLA DE LOGS (Más compacta)
         self._log = ctk.CTkTextbox(self, height=100, fg_color="#ffffff", border_color="#bdc3c7", border_width=1, font=("Consolas", 11))
         self._log.grid(row=2, column=0, sticky="ew", pady=(20, 0))
@@ -122,15 +131,63 @@ class ResultsView(ctk.CTkFrame):
         self._log.see("end")
 
     def add_rows(self, rows: Iterable[ScanRow]) -> None:
-        for row in rows:
-            self._table.insert("", "end", values=(
+        # Insertamos filas asignando un tag que depende del tamaño de grupo configurado
+        rows_list = list(rows)
+        try:
+            self.append_log(f"Añadiendo {len(rows_list)} filas (group_size={self._group_size})")
+        except Exception:
+            pass
+        # Asegurar que las tags están aplicadas en el widget antes de insertar
+        try:
+            self._table.tag_configure("group_white")
+            self._table.tag_configure("group_gray")
+        except Exception:
+            pass
+
+        for i, row in enumerate(rows_list):
+            if self._group_size <= 1:
+                group = i % 2
+            else:
+                group = (i // self._group_size) % 2
+            tag = "group_gray" if group == 1 else "group_white"
+            item_id = self._table.insert("", "end", values=(
                 row.fila_id,
                 row.articulo,
                 row.cantidad,
                 f"S/. {row.precio_prov:.2f}",
                 f"S/. {row.precio_cli:.2f}",
                 f"{row.margen:.2f}%"
-            ))
+            ), tags=(tag,))
+            # Re-aplicar tag por si el motor de tema la ignoró inicialmente
+            try:
+                self._table.item(item_id, tags=(tag,))
+            except Exception:
+                pass
+            # Log de depuración por ítem (solo primeros 12 para no saturar)
+            try:
+                if i < 12:
+                    self.append_log(f"item {i} id={item_id} tag={tag}")
+            except Exception:
+                pass
+            # Re-aplicar tag por si el motor de tema la ignoró inicialmente
+            try:
+                self._table.item(item_id, tags=(tag,))
+            except Exception:
+                pass
+
+    def set_group_size(self, size: int) -> None:
+        try:
+            self._group_size = max(1, int(size))
+        except Exception:
+            self._group_size = 1
+        try:
+            self.append_log(f"Group size seteado a {self._group_size}")
+        except Exception:
+            pass
+        try:
+            self._table.update_idletasks()
+        except Exception:
+            pass
 
     def set_stats_text(self, text: str) -> None:
         try:
