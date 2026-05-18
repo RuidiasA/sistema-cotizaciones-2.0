@@ -224,7 +224,6 @@ class ExcelScanService:
         search_pack: dict,
         report: FileScanReport,
     ) -> None:
-        import re
         from src.services.text_utils import (
             normalizar_texto, 
             limpiar_y_entero, 
@@ -238,14 +237,26 @@ class ExcelScanService:
         tags = search_pack.get("tags", [])
         col_detalle = col_map.get("detalle") 
 
+        # --- [OPTIMIZACIÓN] Pre-calcular columnas prioritarias por niveles ---
+        # Nivel 1: Columnas que explícitamente guardan el detalle extendido u observaciones
+        cols_detalle_real = [
+            c for c in df.columns
+            if any(k in str(c).lower() for k in ["detalle", "descripcion", "descr", "observac", "obs", "especif"])
+        ]
+        
+        # Nivel 2: Columnas de nombres cortos o ítems (solo como plan B si no hay Nivel 1)
+        cols_producto_plan_b = [
+            c for c in df.columns
+            if any(k in str(c).lower() for k in ["articulo", "producto", "nombre", "item"])
+            and c not in cols_detalle_real
+        ]
+
         for idx, fila in df.iterrows():
-            # 1. VALIDACIÓN SEMÁNTICA (Inclusión y Exclusión global)
+            # 1. VALIDACIÓN SEMÁNTICA
             if not self._cumple_busqueda_tokenizada(fila, search_pack):
                 continue
             
             # 2. FILTRADO ESTRICTO EN COLUMNA DETALLE
-            # Al menos uno de los sinónimos (tags) debe estar en el nombre del producto
-            # Solo aplica si hay términos de búsqueda especificados
             if tags and col_detalle and col_detalle in fila:
                 texto_col = normalizar_texto(str(fila[col_detalle]))
                 match_detalle = any(
@@ -257,23 +268,90 @@ class ExcelScanService:
 
             # 3. PROCESAMIENTO DE DATOS Y PRECIOS
             try:
-                # Extraer y validar cantidad
                 cantidad = limpiar_y_entero(fila[col_map["cant"]])
-                detalle_raw = str(fila[col_detalle]) if col_detalle else ""
+                
+                # Función ultra robusta para detectar números y códigos de barra/SKUs cortos (ej: CAN-NAV-01)
+                def es_identificador_o_numero(v):
+                    s = str(v).strip()
+                    if not s:
+                        return True
+                    # Detectar números enteros o decimales
+                    try:
+                        float(s)
+                        return True
+                    except ValueError:
+                        pass
+                    # Detectar códigos/SKUs: textos cortos (menos de 20 caracteres) que no llevan espacios
+                    if len(s) < 20 and " " not in s:
+                        return True
+                    return False
 
-                if cantidad <= 0:
-                    report.failed_rows.append(
-                        ScanRow(
-                            fila_id=int(idx),
-                            articulo=recortar_detalle(detalle_raw),
-                            cantidad=cantidad,
-                            precio_prov=0.0,
-                            precio_cli=0.0,
-                            margen=0.0,
-                            motivo="cantidad",
+                # Intentar obtener el candidato inicial de la columna mapeada originalmente
+                detalle_raw = ""
+                if col_detalle and col_detalle in fila:
+                    detalle_raw = fila[col_detalle]
+
+                # Si lo mapeado está vacío o es un código/número, aplicamos la cascada inteligente
+                if pd.isna(detalle_raw) or str(detalle_raw).strip() == "" or es_identificador_o_numero(detalle_raw):
+                    encontrado = False
+                    
+                    # Paso A: Buscar primero en las columnas de descripción reales (Detalle, Observaciones, etc.)
+                    for c in cols_detalle_real:
+                        val = fila.get(c)
+                        if pd.notna(val) and str(val).strip() and not es_identificador_o_numero(val):
+                            detalle_raw = val
+                            encontrado = True
+                            break
+                    
+                    # Paso B: Si no funcionó, buscar en columnas de nombre de producto (Artículo, Producto)
+                    if not encontrado:
+                        for c in cols_producto_plan_b:
+                            val = fila.get(c)
+                            if pd.notna(val) and str(val).strip() and not es_identificador_o_numero(val):
+                                detalle_raw = val
+                                encontrado = True
+                                break
+                                
+                    # Paso C (Heurística de Rescate Extremo): Si los encabezados son raros, buscar el texto MÁS LARGO de la fila
+                    if not encontrado:
+                        candidatos = []
+                        for c in df.columns:
+                            if c == col_map.get("cant") or any(k in str(c).lower() for k in ["codigo", "code", "id", "num", "nro", "precio", "costo"]):
+                                continue
+                            val = fila.get(c)
+                            if pd.notna(val):
+                                s_val = str(val).strip()
+                                if s_val and not es_identificador_o_numero(s_val):
+                                    candidatos.append(s_val)
+                        
+                        if candidatos:
+                            # Nos quedamos con el string más largo de la fila (las descripciones siempre ganan en longitud)
+                            detalle_raw = max(candidatos, key=len)
+                            encontrado = True
+
+                    # Paso D (Último recurso total): Si la fila entera son puros números/códigos, dejamos lo que haya
+                    if not encontrado and (pd.isna(detalle_raw) or str(detalle_raw).strip() == ""):
+                        for c in df.columns:
+                            if c == col_map.get("cant"):
+                                continue
+                            val = fila.get(c)
+                            if pd.notna(val) and str(val).strip():
+                                detalle_raw = val
+                                break
+
+                    if cantidad <= 0:
+                        report.failed_rows.append(
+                            ScanRow(
+                                fila_id=int(idx),
+                                articulo=recortar_detalle(detalle_raw),
+                                cantidad=cantidad,
+                                precio_prov=0.0,
+                                precio_cli=0.0,
+                                margen=0.0,
+                                motivo="cantidad",
+                            )
                         )
-                    )
-                    continue
+                        continue
 
                 # Extraer Precio Proveedor (v1)
                 v1 = 0.0
@@ -308,7 +386,7 @@ class ExcelScanService:
                     )
                     continue
 
-                # Detección de Duplicados (Huella única)
+                # Detección de Duplicados
                 huella = (cantidad, round(v1, 2), round(v2, 2))
                 if huella in vistos:
                     report.failed_rows.append(
@@ -324,7 +402,7 @@ class ExcelScanService:
                     )
                     continue
 
-                # Calcular Margen y Validar Límites (Máximo 450%)
+                # Calcular Margen y Validar Límites
                 margen_val = ((v2 - v1) / v1) * 100 if v1 else 0.0
                 if margen_val > 450:
                     report.failed_rows.append(
@@ -358,7 +436,7 @@ class ExcelScanService:
                 report.failed_rows.append(
                     ScanRow(
                         fila_id=int(idx),
-                        articulo=recortar_detalle(fila[col_detalle] if col_detalle else ""),
+                        articulo=recortar_detalle(detalle_raw if ( 'detalle_raw' in locals() and detalle_raw) else (fila[col_detalle] if col_detalle else "")),
                         cantidad=0,
                         precio_prov=0.0,
                         precio_cli=0.0,
@@ -368,7 +446,6 @@ class ExcelScanService:
                 )
 
         # 4. ORDENAMIENTO FINAL Y ESTADÍSTICAS
-        # Ordenamos alfabéticamente por la columna 'articulo'
         report.matched_rows.sort(
             key=lambda row: (str(row.articulo).strip().lower() if row.articulo else "")
         )

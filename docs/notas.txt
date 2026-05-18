@@ -50,3 +50,61 @@ cli=
     "IGV",
     "SERVICIO",
     "1RA",
+
+Materiales
+    NOTEX
+    nylon
+    taslan
+    impermeable
+    lona labrada
+    poliester
+    lino sermat
+    cationi
+    tetron
+
+
+no leer pestañas
+    Registro
+    Red Almenara
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Productos
+    USB
+    Banners
+    Agendas
+    Lapicero Metálico
+    Estuche Metálico
+
+
+
+    quiero que crees un programa en python con pandas y openpyxl que me permita leer un excel completo (con la finalidad de leer unos 800) buscando los encabezados Artículo, Articulos, Observación, Detalle, Detalles, Descripcion(no debe suponer que los encabezados estan en la primera fila, sino que debe buscar la coincidencia exacta), y me devuelva toda la columna articulos/ articulos, pero en observacion/detalle/ detalles/ descripcion, debe devolverme solo las primeras 20 palabras de cada fila que encuentre en esa columna, debe permitir leer varias hojas de un excel, y varias tablas en una hoja a menos que las hojas se llamen: 
+    "criterios",
+    "tallas",
+    "cronograma",
+    "datos",
+    "deuda",
+    "produccion",
+    "proveedor",
+    "proveedores",
+    "costo de proyecto",
+    Registro
+    Red Almenara
+
+    los datos obtenidos deben ser normalizados, ordenados alfabeticamente y devueltos en un excel con 2 columnas: articulo y detalle
+
+    aegurate de que el programa en python sea monolitico y que pueda leer carpetas con tkinter
+
+
+     

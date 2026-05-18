@@ -43,7 +43,8 @@ class ScanControls(ctk.CTkFrame):
 
         self._category_menu = ctk.CTkOptionMenu(self, values=["Todas"] + categories, 
                                                fg_color="#e67e22", button_color="#d35400",
-                                               button_hover_color="#e67e22", height=35)
+                                               button_hover_color="#e67e22", height=35,
+                                               command=self._handle_category_change)
         self._category_menu.set("Todas")
         self._category_menu.pack(fill="x", padx=15, pady=5)
 
@@ -154,6 +155,18 @@ class ScanControls(ctk.CTkFrame):
 
     def _handle_benchmarking(self) -> None:
         categoria = self._category_menu.get()
+        if categoria == "Todas":
+            categoria = ""
+        self._controller.handle_benchmarking(categoria)
+
+    def _handle_category_change(self, categoria: str) -> None:
+        # Cambio de categoría: reusa los datos en memoria sin reescanear disco.
+        if self._is_scanning or self._is_benchmarking:
+            return
+        if not hasattr(self._controller, "has_scan_data"):
+            return
+        if not self._controller.has_scan_data():
+            return
         if categoria == "Todas":
             categoria = ""
         self._controller.handle_benchmarking(categoria)

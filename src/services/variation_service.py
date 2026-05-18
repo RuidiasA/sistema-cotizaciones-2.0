@@ -1,3 +1,4 @@
+import re
 from typing import Dict, List, Any
 from .text_utils import normalizar_texto
 
@@ -41,6 +42,58 @@ class VariationService:
             return {"tags": all_tags, "exclude": []}
 
         return {"tags": [], "exclude": []}
+
+    def get_global_search_pack(self) -> Dict[str, List[str]]:
+        """
+        Retorna un search_pack global para escanear una sola vez toda la carpeta.
+        No aplica excludes por categoría para no descartar productos válidos de otras familias.
+        """
+        tags_unicos = []
+        vistos = set()
+        for clusters in self._variaciones.values():
+            for cluster in clusters:
+                for tag in cluster.get("tags", []):
+                    tag_norm = normalizar_texto(tag)
+                    if not tag_norm or tag_norm in vistos:
+                        continue
+                    vistos.add(tag_norm)
+                    tags_unicos.append(tag)
+        return {"tags": tags_unicos, "exclude": []}
+
+    def matches_category(self, categoria: str, texto_producto: str) -> bool:
+        """
+        Determina si un texto de producto pertenece a una categoría concreta
+        según sus tags y excludes.
+        """
+        if not categoria or categoria not in self._variaciones:
+            return True
+
+        texto_norm = normalizar_texto(texto_producto or "")
+        if not texto_norm:
+            return False
+
+        tags: List[str] = []
+        excludes: List[str] = []
+        for cluster in self._variaciones[categoria]:
+            tags.extend(cluster.get("tags", []))
+            excludes.extend(cluster.get("exclude", []))
+
+        # Si aparece un exclude, se descarta inmediatamente.
+        for exc in excludes:
+            exc_norm = normalizar_texto(exc)
+            if not exc_norm:
+                continue
+            if re.search(rf"\b{re.escape(exc_norm)}\b", texto_norm):
+                return False
+
+        for tag in tags:
+            tag_norm = normalizar_texto(tag)
+            if not tag_norm:
+                continue
+            if re.search(rf"\b{re.escape(tag_norm)}\b", texto_norm):
+                return True
+
+        return False
 
     def is_known_product(self, product_name: str) -> bool:
         prod_norm = normalizar_texto(product_name or "")

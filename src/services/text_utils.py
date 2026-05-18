@@ -80,7 +80,12 @@ _PALABRAS_SERVICIO = (
     "EMBALAJE",
     "ROTULADO",
     "FLETE",
-    
+    "SERVICIO",
+    "SERV",
+    "DESCRIPCION"
+    "DISEÑO BROCHURE",
+    "DISEÑO LOGO",
+    "DISEÑO REVISTA"
 )
 
 _RUIDO_ESPECIFICACION = (

@@ -44,6 +44,9 @@ class AppController:
     def run(self) -> None:
         self._view.mainloop()
 
+    def has_scan_data(self) -> bool:
+        return bool(self._last_scan_rows)
+
     def handle_scan(self, folder: str, categoria: str, keyword: str) -> None:
         self._stop_event.clear()
         self._last_keyword = keyword.strip()
@@ -51,7 +54,8 @@ class AppController:
         self._view.enable_export(False)
         self._view.set_status("Procesando...")
         self._view.clear_results()
-        search_pack = self._variation_service.get_variations(categoria, keyword)
+        # Escaneo global: una sola lectura a disco para todo el universo de productos.
+        search_pack = self._variation_service.get_global_search_pack()
         
         future = self._executor.submit(
             self._scan_service.scan_folder, folder, search_pack, self._stop_event
@@ -201,13 +205,33 @@ class AppController:
             self._view.after(0, lambda: self._view.set_status("Sin datos para benchmarking"))
             return
 
+        rows_para_benchmarking = self._last_scan_rows
+        categoria_limpia = (categoria or "").strip()
+        if categoria_limpia:
+            rows_para_benchmarking = [
+                row
+                for row in self._last_scan_rows
+                if self._variation_service.matches_category(categoria_limpia, row.articulo)
+            ]
+
+        if not rows_para_benchmarking:
+            self._view.after(0, lambda: self._view.clear_results())
+            self._view.after(
+                0,
+                lambda: self._view.set_status(
+                    f"Sin datos para la categoría: {categoria_limpia}"
+                ),
+            )
+            self._view.after(0, lambda: self._view.enable_export(False))
+            return
+
         self._view.after(0, lambda: self._view.set_benchmarking_state(True))
         self._view.after(0, lambda: self._view.enable_export(False))
         self._view.after(0, lambda: self._view.set_status("Generando Benchmarking..."))
         future = self._executor.submit(
             self._benchmarking_service.generar_benchmarking,
-            list(self._last_scan_rows),
-            categoria,
+            list(rows_para_benchmarking),
+            categoria_limpia,
             self._last_keyword,
         )
         future.add_done_callback(lambda f: self._on_benchmarking_done(f))
