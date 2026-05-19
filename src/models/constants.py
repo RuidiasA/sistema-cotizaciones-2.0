@@ -9,7 +9,7 @@ VARIACIONES_POR_CATEGORIA = {
     ],
     "bolsas y packaging": [
         {
-            "tags": ["bolsa", "bolsas", "bolsa ecologica", "bolsas ecologicas", "bolsa de tela", "tote", "totes", "notex"],
+            "tags": ["bolsa", "bolsas", "bolsa ecologica", "bolsa tocuyo", "bolsas ecologicas", "bolsa de tela", "tote", "totes", "notex"],
             "exclude": ["plastico", "basura", "aseo", "celofan", "papel", "regalo"]
         }
     ],
@@ -33,8 +33,8 @@ VARIACIONES_POR_CATEGORIA = {
     ],
     "casacas, chamarras y abrigos": [
         {
-            "tags": ["casaca", "casacas", "chamarra", "chamarras", "jacket", "jackets", "chaqueta", "chaquetas", "cortavientos", "rompevientos", "parka", "parkas", "abrigo", "abrigos", "sobretodo", "sobretodos", "gabardina", "gabardinas", "prendas de invierno"],
-            "exclude": ["cuero"]
+            "tags": ["casaca", "casacas", "chamarra", "chamarras", "jacket", "jackets", "chaqueta", "chaquetas", "cortavientos", "casaca cortavientos", "rompevientos", "parka", "parkas", "abrigo", "abrigos", "sobretodo", "sobretodos", "gabardina", "gabardinas", "prendas de invierno"],
+            "exclude": ["cuero", "pantalon", "disfraz"]
         }
     ],
     "chalecos": [
@@ -89,7 +89,7 @@ VARIACIONES_POR_CATEGORIA = {
     ],
     "lapiceros y escritura": [
         {
-            "tags": ["lapicero", "lapiceros", "boligrafo", "boligrafos", "pluma", "plumas", "esfero", "esferos"],
+            "tags": ["lapicero", "lapiceros", "lapicero plastico", "boligrafo", "boligrafos", "pluma", "plumas", "esfero", "esferos"],
             "exclude": ["calculadora", "repuesto", "tinta"]
         },
         {
@@ -147,7 +147,7 @@ VARIACIONES_POR_CATEGORIA = {
     ],
     "polos y camisetas": [
         {
-            "tags": ["polo", "polos", "polo cuello camisero", "polos publicitarios", "remera", "remeras", "t-shirt", "t-shirts", "camiseta", "camisetas", "camiseta deportiva", "camisetas deportivas"],
+            "tags": ["polo", "polos", "polo camisero", "polos publicitarios", "remera", "remeras", "t-shirt", "t-shirts", "camiseta", "camisetas", "camiseta deportiva", "camisetas deportivas"],
             "exclude": ["manga larga", "tomatodo"]
         }
     ],

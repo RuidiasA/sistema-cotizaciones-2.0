@@ -93,6 +93,29 @@ class AppController:
                 filas_globales.extend(report.matched_rows)
                 self._stats.merge(report.stats)
 
+            # Resumen de archivos y filas procesadas
+            total_files = len(reports)
+            valid_files = sum(1 for r in reports if not r.error_message)
+            invalid_files = total_files - valid_files
+            # Contar hojas válidas por reporte: si `sheet_name` contiene varias hojas
+            # (lista separada por comas), sumamos la cantidad de entradas válidas por archivo.
+            sheets_valid = 0
+            for r in reports:
+                if r.error_message:
+                    continue
+                if not r.sheet_name:
+                    continue
+                # `sheet_name` puede ser una cadena con nombres separados por coma
+                hojas = [s.strip() for s in str(r.sheet_name).split(",") if s and s.strip()]
+                sheets_valid += len(hojas)
+            # Contar estrictamente las filas válidas que se renderizarán en la vista
+            total_rows_generated = sum(len(r.matched_rows) for r in reports)
+
+            # Añadimos el resumen al log para visibilidad
+            self._view.append_log("")
+            self._view.append_log(f"Resumen: archivos detectados: {total_files} | válidos: {valid_files} | inválidos: {invalid_files}")
+            self._view.append_log(f"Hojas válidas leídas: {sheets_valid} | Filas generadas: {total_rows_generated}")
+
             # ORDENAMIENTO GLOBAL A-Z
             filas_globales.sort(key=lambda x: str(x.articulo).strip().lower())
 

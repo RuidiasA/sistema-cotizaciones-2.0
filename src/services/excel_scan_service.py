@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import re
+from pathlib import Path
 import sys
 import threading
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
@@ -39,16 +40,85 @@ class ExcelScanService:
         try:
             # Tip: use_cols y engine ayudan a evitar algunos errores de memoria
             xls = pd.ExcelFile(file_path)
-            best_df, best_sheet, col_map, max_matches = self._find_best_sheet(
-                file_path, xls.sheet_names, search_pack
-            )
-            
-            if best_df is None or max_matches <= 0:
+
+            # Iterar todas las hojas del workbook y procesar las que contengan datos válidos.
+            sheets_processed: List[str] = []
+
+            for sheet_name in xls.sheet_names:
+                # Saltar hojas excluidas
+                if any(ex in sheet_name.lower().strip() for ex in self._hojas_excluidas):
+                    continue
+
+                # Intentar detectar cabecera en las primeras filas
+                try:
+                    df_check = pd.read_excel(file_path, sheet_name=sheet_name, header=None, nrows=25)
+                except Exception:
+                    continue
+
+                header_row = self._detect_header_row(df_check)
+                if header_row is None:
+                    continue
+
+                # Leer la hoja completa con la cabecera detectada
+                try:
+                    df_temp = pd.read_excel(file_path, sheet_name=sheet_name, header=header_row)
+                except Exception:
+                    continue
+
+                df_temp.columns = [str(c).replace("\n", " ").strip() for c in df_temp.columns]
+
+                # Detectar columnas claves
+                c_cant = next(
+                    (
+                        c
+                        for c in df_temp.columns
+                        if any(kw in c.lower() for kw in ["cant. min.", "cant.", "cant", "cantidad"])
+                    ),
+                    None,
+                )
+                c_finals = [
+                    c
+                    for c in df_temp.columns
+                    if any(kw in c.lower() for kw in ["unit", "uni.", "uni ", "no igv", "venta"]) 
+                ]
+                c_provs = [
+                    c
+                    for c in df_temp.columns
+                    if any(kw in c.lower() for kw in ["costo s/.", "costo prov"]) and c not in c_finals and "total" not in c.lower()
+                ]
+                c_detalle = next((c for c in df_temp.columns if "detalle" in c.lower()), None)
+
+                if c_cant and (c_provs or c_finals):
+                    # Preparación mínima de la hoja
+                    df_temp[c_cant] = df_temp[c_cant].ffill()
+                    if c_detalle:
+                        df_temp[c_detalle] = df_temp[c_detalle].ffill()
+                    for c in (c_provs + c_finals):
+                        df_temp[c] = df_temp[c].ffill()
+
+                    # Comprobar si la hoja contiene matches
+                    mask = df_temp.apply(
+                        lambda row: self._cumple_busqueda_tokenizada(row, search_pack),
+                        axis=1,
+                    )
+                    matches = int(mask.sum())
+                    if matches > 0:
+                        sheets_processed.append(sheet_name)
+                        col_map = {
+                            "cant": c_cant,
+                            "provs": c_provs,
+                            "finals": c_finals,
+                            "detalle": c_detalle,
+                        }
+                        # Procesar filas de esta hoja y acumular en el report
+                        self._process_rows(df_temp, col_map, search_pack, report)
+
+            # Si no se encontraron filas válidas en ninguna hoja
+            if not report.matched_rows and not report.failed_rows:
                 report.error_message = "No se detectó una tabla válida."
                 return report
 
-            report.sheet_name = best_sheet
-            self._process_rows(best_df, col_map, search_pack, report)
+            report.sheet_name = ", ".join(sheets_processed) if sheets_processed else None
             return report
 
         except PermissionError:
@@ -60,12 +130,17 @@ class ExcelScanService:
     def _list_excel_files(self, folder_path: str) -> List[str]:
         if not folder_path or not os.path.isdir(folder_path):
             return []
-        archivos = []
-        for name in os.listdir(folder_path):
-            if name.startswith("~$"):
-                continue
-            if name.lower().endswith((".xlsx", ".xls")):
-                archivos.append(os.path.join(folder_path, name))
+        archivos: List[str] = []
+        root = Path(folder_path)
+        # Buscar recursivamente ambos patrones y combinar resultados
+        for pattern in ("*.xlsx", "*.xls"):
+            for p in root.rglob(pattern):
+                # Saltar archivos temporales de Excel (ej: ~$...)
+                if p.name.startswith("~$"):
+                    continue
+                # Asegurarse de que sea un archivo regular
+                if p.is_file():
+                    archivos.append(str(p))
         return archivos
 
     def _find_best_sheet(
@@ -445,8 +520,12 @@ class ExcelScanService:
                     )
                 )
 
-        # 4. ORDENAMIENTO FINAL Y ESTADÍSTICAS
+        # 4. ORDENAMIENTO PARCIAL Y ACUMULACIÓN DE ESTADÍSTICAS
         report.matched_rows.sort(
             key=lambda row: (str(row.articulo).strip().lower() if row.articulo else "")
         )
-        report.stats = stats
+        # Merge stats (no sobrescribir estadísticas previas del report)
+        try:
+            report.stats.merge(stats)
+        except Exception:
+            report.stats = stats

@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Dict, List, Optional
 
 import pandas as pd
+import logging
 
 from ..models.entities import ArchetypeData, BenchmarkingMatrix, ScanRow
 from .text_utils import (
@@ -58,13 +59,17 @@ class BenchmarkingService:
 
         records: List[Dict[str, object]] = []
         for row in scan_rows:
+            # Auditoría: registrar descartes por reglas de negocio
             if row.cantidad <= 0:
+                logging.warning("Benchmarking: descartado por cantidad<=0 -> %s | cantidad=%s", row.articulo, row.cantidad)
                 continue
             if row.margen <= 0:
+                logging.warning("Benchmarking: descartado por margen<=0 -> %s | margen=%s", row.articulo, row.margen)
                 continue
 
             arquetipo = self.extraer_arquetipo(row.articulo, keyword)
             if not arquetipo:
+                logging.warning("Benchmarking: descartado por arquetipo vacío -> %s", row.articulo)
                 continue
 
             records.append(
@@ -217,7 +222,7 @@ class BenchmarkingService:
         m1000 = m1000 if m1000 is not None else self.MARGEN_BASE
         m500 = m500 if m500 is not None else self._weighted_avg(m100, c100, m1000, c1000)
 
-        # 3. RESTRICCIÓN DE MONOTONÍA (Versión Segura sin Arrastre)
+        # 3. RESTRICCIÓN DE MONOTONÍA
         # Creamos copias para que ninguna reasignación altere la evaluación de la siguiente línea
         m100_ant, m500_ant, m1000_ant = m100, m500, m1000
 

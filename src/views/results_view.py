@@ -67,10 +67,10 @@ class ResultsView(ctk.CTkFrame):
         self._scrollbar.grid(row=0, column=1, sticky="ns", padx=(2, 5), pady=15)
 
         # Configuración de tags para alternar fondo cada 3 filas
-        # 'group_white' = fondo blanco, 'group_gray' = fondo gris claro
+        # fondo blanco
         self._table.tag_configure("group_white", background="#ffffff", foreground="#2c3e50")
-        # Gris un poco más visible
-        self._table.tag_configure("group_gray", background="#e9eef0", foreground="#2c3e50")
+        # Color más anaranjado y suave
+        self._table.tag_configure("group_gray", background="#FFCAAD", foreground="#2c3e50")
 
         # Tamaño del grupo para alternancia. 1 = alternar por fila, 3 = alternar por cada 3 filas
         self._group_size = 1
@@ -115,7 +115,7 @@ class ResultsView(ctk.CTkFrame):
                   background=[('active', '#d35400')],
                   foreground=[('active', '#ffffff')])
 
-        style.map("Treeview", background=[('selected', '#f39c12')], foreground=[('selected', '#ffffff')])
+        style.map("Treeview", background=[('selected', '#e67e22')], foreground=[('selected', '#ffffff')])
 
     # --- MÉTODOS DE COMUNICACIÓN ---
     def clear(self) -> None:
@@ -133,10 +133,7 @@ class ResultsView(ctk.CTkFrame):
     def add_rows(self, rows: Iterable[ScanRow]) -> None:
         # Insertamos filas asignando un tag que depende del tamaño de grupo configurado
         rows_list = list(rows)
-        try:
-            self.append_log(f"Añadiendo {len(rows_list)} filas (group_size={self._group_size})")
-        except Exception:
-            pass
+        # (Debug logging removed)
         # Asegurar que las tags están aplicadas en el widget antes de insertar
         try:
             self._table.tag_configure("group_white")
@@ -163,12 +160,7 @@ class ResultsView(ctk.CTkFrame):
                 self._table.item(item_id, tags=(tag,))
             except Exception:
                 pass
-            # Log de depuración por ítem (solo primeros 12 para no saturar)
-            try:
-                if i < 12:
-                    self.append_log(f"item {i} id={item_id} tag={tag}")
-            except Exception:
-                pass
+            # (Per-item debug logging removed)
             # Re-aplicar tag por si el motor de tema la ignoró inicialmente
             try:
                 self._table.item(item_id, tags=(tag,))
@@ -180,10 +172,7 @@ class ResultsView(ctk.CTkFrame):
             self._group_size = max(1, int(size))
         except Exception:
             self._group_size = 1
-        try:
-            self.append_log(f"Group size seteado a {self._group_size}")
-        except Exception:
-            pass
+        # (Debug logging removed)
         try:
             self._table.update_idletasks()
         except Exception:
