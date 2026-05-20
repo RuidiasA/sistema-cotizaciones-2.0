@@ -66,12 +66,16 @@ _MATERIALES_BASE = (
     "LONA LABRADA",
     "LINO SERMAT",
     "TETRON",
+    "CUERO",
+    "VINIL",
 )
 
 _SEGMENTOS_CALIDAD = (
     "PUBLICITARIO",
     "CORPORATIVO",
     "CORPORATIVA",
+    "EJECUTIVO",
+    "EJECUTIVA",
 )
 
 _PALABRAS_SERVICIO = (
@@ -82,10 +86,13 @@ _PALABRAS_SERVICIO = (
     "FLETE",
     "SERVICIO",
     "SERV",
+    "SERVICE",
     "DESCRIPCION"
     "DISEÑO BROCHURE",
     "DISEÑO LOGO",
     "DISEÑO REVISTA"
+    "TENERSE",
+    "COSTO",
 )
 
 _RUIDO_ESPECIFICACION = (
@@ -103,7 +110,16 @@ _RUIDO_ESPECIFICACION = (
     "FABRICACION",
     "NACIONAL",
     "TALLA",
-    
+    "RECOTIZACION",
+    "COTIZACION",
+    "PROPUESTA",
+    "DESCRIPCION",
+    "INCLUYE",
+    "INC",
+    "ARMADO"
+    "ALTAMURA",
+    "PRODUCCION",
+    "CARACTERISTICA",
 )
 
 

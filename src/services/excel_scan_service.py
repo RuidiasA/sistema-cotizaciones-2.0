@@ -229,8 +229,15 @@ class ExcelScanService:
 
         tags = search_pack.get("tags", [])
         excludes = search_pack.get("exclude", [])
-        
-        all_excludes = list(set(excludes + self.KEYWORDS_DESCARTAR))
+
+        if "tags_norm" not in search_pack:
+            search_pack["tags_norm"] = list({normalizar_texto(tag) for tag in tags if tag})
+        if "exclude_norm" not in search_pack:
+            base_excludes = excludes + self.KEYWORDS_DESCARTAR
+            search_pack["exclude_norm"] = list({normalizar_texto(exc) for exc in base_excludes if exc})
+
+        tags_norm = search_pack.get("tags_norm", [])
+        all_excludes = search_pack.get("exclude_norm", [])
         
         # Limpieza de ruido y normalización
         tokens = [str(v).split("Presentación:")[0].strip() for v in fila.values if pd.notna(v)]
@@ -238,13 +245,14 @@ class ExcelScanService:
         
         # 1. EXCLUSIÓN (Si hay una prohibida, fuera)
         for exc in all_excludes:
-            if re.search(rf'\b{re.escape(normalizar_texto(exc))}\b', contenido_norm):
+            if exc and exc in contenido_norm:
                 return False
             
-        if not tags: return True
+        if not tags_norm:
+            return True
         # 2. INCLUSIÓN (Al menos un tag debe estar)
-        for tag in tags:
-            if re.search(rf'\b{re.escape(normalizar_texto(tag))}\b', contenido_norm):
+        for tag in tags_norm:
+            if re.search(rf'\b{re.escape(tag)}\b', contenido_norm):
                 return True
         return False
     

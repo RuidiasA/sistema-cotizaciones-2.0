@@ -6,8 +6,10 @@ import threading
 from typing import List, Optional
 
 import pandas as pd
+from openpyxl.utils import get_column_letter
+from openpyxl.styles import PatternFill, Font, Alignment
 
-from ..models.constants import DEFAULT_EXCEL_FOLDER, HOJAS_EXCLUIDAS, VARIACIONES_POR_CATEGORIA
+from ..models.constants import DEFAULT_EXCEL_FOLDER, HOJAS_EXCLUIDAS, MACRO_CATEGORIAS
 from ..models.entities import BenchmarkingMatrix, FileScanReport, PriceStats, ScanRow
 from ..services.benchmarking_service import BenchmarkingService
 from ..services.excel_scan_service import ExcelScanService
@@ -19,7 +21,7 @@ from ..views.main_view import MainView
 class AppController:
     def __init__(self) -> None:
         # Inicializamos los servicios y la vista. El VariationService se encarga de manejar las variaciones por categoría, el ExcelScanService se encarga de escanear los archivos Excel, y el QuoteService se encarga de generar cotizaciones basadas en los datos escaneados.
-        self._variation_service = VariationService(VARIACIONES_POR_CATEGORIA)
+        self._variation_service = VariationService(MACRO_CATEGORIAS)
         self._scan_service = ExcelScanService(HOJAS_EXCLUIDAS)
         self._quote_service = QuoteService()
         self._benchmarking_service = BenchmarkingService()
@@ -54,13 +56,79 @@ class AppController:
         self._view.enable_export(False)
         self._view.set_status("Procesando...")
         self._view.clear_results()
-        # Escaneo global: una sola lectura a disco para todo el universo de productos.
-        search_pack = self._variation_service.get_global_search_pack()
+        # Escaneo por selección (macro/sub): una sola lectura a disco según el universo elegido.
+        search_pack = self._build_search_pack(categoria, keyword)
         
         future = self._executor.submit(
             self._scan_service.scan_folder, folder, search_pack, self._stop_event
         )
         future.add_done_callback(lambda f: self._on_scan_done(f))
+
+    def _build_search_pack(self, categoria: str, keyword: str) -> dict:
+        categoria = (categoria or "").strip()
+        keyword = (keyword or "").strip()
+        if not categoria:
+            search_pack = self._variation_service.get_global_search_pack()
+            return self._dedupe_search_pack(search_pack, keyword)
+
+        macro, sub = self._resolve_macro_subcategoria(categoria)
+        if not macro:
+            search_pack = self._variation_service.get_global_search_pack()
+            return self._dedupe_search_pack(search_pack, keyword)
+
+        tags: List[str] = []
+        excludes: List[str] = []
+        macro_info = MACRO_CATEGORIAS.get(macro, {})
+        global_excludes = macro_info.get("global_exclude", [])
+        subcategorias = macro_info.get("subcategorias", {})
+
+        if sub:
+            clusters = subcategorias.get(sub, [])
+        else:
+            clusters = []
+            for sub_clusters in subcategorias.values():
+                clusters.extend(sub_clusters)
+
+        for cluster in clusters:
+            tags.extend(cluster.get("tags", []))
+            excludes.extend(cluster.get("exclude", []))
+
+        excludes.extend(global_excludes)
+
+        return self._dedupe_search_pack({"tags": tags, "exclude": excludes}, keyword)
+
+    def _dedupe_search_pack(self, search_pack: dict, keyword: str) -> dict:
+        tags = search_pack.get("tags", [])
+        excludes = search_pack.get("exclude", [])
+
+        tags_set = set(tags)
+        excludes_set = set(excludes)
+        if keyword:
+            tags_set.add(keyword)
+
+        return {
+            "tags": list(tags_set),
+            "exclude": list(excludes_set),
+        }
+
+    def _resolve_macro_subcategoria(self, categoria: str) -> tuple[str | None, str | None]:
+        if not categoria:
+            return None, None
+
+        if ">" in categoria:
+            macro, sub = [part.strip() for part in categoria.split(">", 1)]
+            if macro and sub:
+                return macro, sub
+
+        if categoria in MACRO_CATEGORIAS:
+            return categoria, None
+
+        for macro, info in MACRO_CATEGORIAS.items():
+            subcategorias = info.get("subcategorias", {})
+            if categoria in subcategorias:
+                return macro, categoria
+
+        return None, None
     
     def handle_cancel(self) -> None:
         """Activa la señal de parada"""
@@ -294,9 +362,10 @@ class AppController:
                 {
                     "Producto (Arquetipo)": item.nombre_arquetipo,
                     "Cantidad": 100,
+                    "Margen Promedio": float(item.margen_tier_100) / 100.0,
+                    " ": "",
                     "COSTO PROV.": round(float(item.costo_avg_100), 2),
                     "PRECIO CLI.": round(float(item.precio_avg_100), 2),
-                    "Margen Promedio": round(float(item.margen_tier_100), 2),
                     "Muestra (Casos)": item.casos_tier_100,
                 }
             )
@@ -304,9 +373,10 @@ class AppController:
                 {
                     "Producto (Arquetipo)": item.nombre_arquetipo,
                     "Cantidad": 500,
+                    "Margen Promedio": float(item.margen_tier_500) / 100.0,
+                    " ": "",
                     "COSTO PROV.": round(float(item.costo_avg_500), 2),
                     "PRECIO CLI.": round(float(item.precio_avg_500), 2),
-                    "Margen Promedio": round(float(item.margen_tier_500), 2),
                     "Muestra (Casos)": item.casos_tier_500,
                 }
             )
@@ -314,9 +384,10 @@ class AppController:
                 {
                     "Producto (Arquetipo)": item.nombre_arquetipo,
                     "Cantidad": 1000,
+                    "Margen Promedio": float(item.margen_tier_1000) / 100.0,
+                    " ": "",
                     "COSTO PROV.": round(float(item.costo_avg_1000), 2),
                     "PRECIO CLI.": round(float(item.precio_avg_1000), 2),
-                    "Margen Promedio": round(float(item.margen_tier_1000), 2),
                     "Muestra (Casos)": item.casos_tier_1000,
                 }
             )
@@ -326,9 +397,10 @@ class AppController:
             columns=[
                 "Producto (Arquetipo)",
                 "Cantidad",
+                "Margen Promedio",
+                " ",
                 "COSTO PROV.",
                 "PRECIO CLI.",
-                "Margen Promedio",
                 "Muestra (Casos)",
             ],
         )
@@ -338,7 +410,100 @@ class AppController:
         output_file = os.path.join(folder_path, f"Benchmarking_{categoria_safe}.xlsx")
 
         try:
-            df.to_excel(output_file, index=False, engine="openpyxl")
+            with pd.ExcelWriter(output_file, engine="openpyxl") as writer:
+                df.to_excel(writer, index=False, sheet_name="Benchmarking")
+                worksheet = writer.sheets["Benchmarking"]
+                margen_col = df.columns.get_loc("Margen Promedio") + 1
+                margen_letter = get_column_letter(margen_col)
+
+                # Ensure native percentage numeric format for the "Margen Promedio" column
+                for row_idx in range(2, len(df) + 2):
+                    worksheet[f"{margen_letter}{row_idx}"].number_format = "0.00%"
+
+                # --- Header styling and prepare alignment mapping ---
+                header_fill = PatternFill(fill_type="solid", start_color="D35400", end_color="D35400")
+                header_font = Font(color="FFFFFF", bold=True)
+
+                # Define exact column names that must be centered
+                center_names = {
+                    "Cantidad",
+                    "Margen Promedio",
+                    "Margen promedio",
+                    "COSTO PROV.",
+                    "PRECIO CLI.",
+                    "Muestra (Casos)",
+                }
+
+                # Precompute which column indices should be centered
+                centered_cols = set()
+                for idx, col_name in enumerate(df.columns, start=1):
+                    if col_name in center_names:
+                        centered_cols.add(idx)
+
+                for col_idx in range(1, len(df.columns) + 1):
+                    cell = worksheet.cell(row=1, column=col_idx)
+                    # Special-case: column 4 must remain visually empty
+                    if col_idx == 4:
+                        cell.value = ""
+                        cell.fill = PatternFill(fill_type="solid", start_color="FFFFFF", end_color="FFFFFF")
+                        cell.font = Font(color="2C3E50")
+                        cell.alignment = Alignment(horizontal="left", vertical="center")
+                        continue
+
+                    cell.fill = header_fill
+                    cell.font = header_font
+                    if col_idx in centered_cols:
+                        cell.alignment = Alignment(horizontal="center", vertical="center")
+                    else:
+                        cell.alignment = Alignment(horizontal="left", vertical="center")
+
+                # --- Data rows styling: zebra striping in blocks of 3 rows ---
+                data_font = Font(color="2C3E50")
+                for row_idx in range(2, len(df) + 2):
+                    i = row_idx - 2  # zero-based index for first data row
+                    if (i // 3) % 2 == 1:
+                        fill_color = "FFCAAD"
+                    else:
+                        fill_color = "FFFFFF"
+                    data_fill = PatternFill(fill_type="solid", start_color=fill_color, end_color=fill_color)
+
+                    for col_idx in range(1, len(df.columns) + 1):
+                        cell = worksheet.cell(row=row_idx, column=col_idx)
+                        # Special-case: column 4 must be empty and visually blank
+                        if col_idx == 4:
+                            cell.value = ""
+                            cell.fill = PatternFill(fill_type="solid", start_color="FFFFFF", end_color="FFFFFF")
+                            cell.font = data_font
+                            cell.alignment = Alignment(horizontal="left", vertical="center")
+                            continue
+
+                        cell.font = data_font
+                        # preserve numeric format for Margen Promedio column
+                        if col_idx == margen_col:
+                            cell.number_format = "0.00%"
+
+                        # Apply alignment: centered for selected columns, left for others
+                        if col_idx in centered_cols:
+                            cell.alignment = Alignment(horizontal="center", vertical="center")
+                        else:
+                            cell.alignment = Alignment(horizontal="left", vertical="center")
+
+                        cell.fill = data_fill
+
+                # --- Auto-fit column widths ---
+                for col in worksheet.columns:
+                    col_idx = col[0].column
+                    col_letter = get_column_letter(col_idx)
+                    # Force column 4 (D) to a small fixed width and skip auto-fit
+                    if col_idx == 4:
+                        worksheet.column_dimensions[col_letter].width = 10
+                        continue
+
+                    try:
+                        max_len = max(len(str(cell.value or "")) for cell in col)
+                    except ValueError:
+                        max_len = 0
+                    worksheet.column_dimensions[col_letter].width = max(max_len + 4, 12)
         except Exception as exc:
             self._view.after(0, lambda: self._view.set_status(f"Error: {exc}"))
             return
